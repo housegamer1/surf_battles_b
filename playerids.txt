@@ -5,10 +5,10 @@
 
 #Optionally it can also be used to restrict results
 #Accepts the exact map name (surf_) prefix can be dropped
-map=surf_deadline
+map=
 
 #Accepts main or map or 0, 1 or b1, 2 or b2 etc
-zone=0
+zone=
 
 #player IDs below
 37964988
