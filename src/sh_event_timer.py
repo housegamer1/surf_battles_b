@@ -166,6 +166,7 @@ def check_results():
     global cfg
 
     if lastResultCheck == None or now - lastResultCheck > 2:
+        lastResultCheck = now
             
         #using general api and filtering here to reduce api calls
         endpoint = shapi + "finishes"
