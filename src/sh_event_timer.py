@@ -2,7 +2,9 @@ import requests
 import json
 import time
 import datetime
+import datetime
 import keyboard
+import os
 
 ########################
 # Player related stuff #
@@ -10,35 +12,33 @@ import keyboard
 class Player:
     id      = None
     name    = None
-    records   = []
+    records = None
 
     def __init__(self, id) -> None:
         self.id = id
         self.name = request_name(id)
+        self.records = []
 
-    def add_time(self, settime, settimestamp, map=None, zone=None):
-        finish = {
-            "time": settime,
-            "timestamp": settimestamp #to avoid re-adding the same timestamp but allow adding the same set time
-        }
+    def add_time(self, settime, settimestamp, map, zone):
+        global launchtime
+        finishstamp = datetime.datetime.strptime(settimestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+        #print(self.get_name() + " Should add finish: " + map + " , " + str(settime) + "? " + str(finishstamp > launchtime) + " [ " + str(finishstamp) + " > " + str(launchtime) + " ]")
+        #prevent records from before program launch being recorded
+        if finishstamp > launchtime:
 
-        for entry in self.records:
-            if entry["timestamp"] == settimestamp:
-                return
+            finish = {
+                "time": settime,
+                "timestamp": settimestamp,
+                "map": map,
+                "zone": zone
+            }
 
-        self.records.append(finish)
+            for entry in self.records:
+                if entry["timestamp"] == settimestamp:
+                    return
 
-        finishprint = self.get_name() + " finished "
-        
-        if map != None:
-            finishprint = finishprint + map + " "
-
-        if zone != None:
-            zone = "(map)" if str(zone) == "0" else "B" + str(zone)
-            finishprint = finishprint + str(zone)
-
-        finishprint = finishprint + " in " + pretty_print_time(settime)
-        print(finishprint)
+            self.records.append(finish)
+            #self.format_finish(settime, map, zone, True)
 
     def clear_times(self):
         self.records.clear()
@@ -52,6 +52,23 @@ class Player:
     def get_name(self):
         return self.name
 
+    def get_records(self):
+        return self.records
+
+    def format_finish(self, settime, map, zone, toprint):
+        finishprint = self.get_name() + " finished "
+        finishprint = finishprint + map + " "
+        zone = "(map)" if str(zone) == "0" else "B" + str(zone)
+        finishprint = finishprint + str(zone)
+
+        finishprint = finishprint + " in " + pretty_print_time(settime)
+
+        if toprint == True:
+            print(finishprint)
+        else:
+            return finishprint
+
+
 ########################
 # Config related stuff #
 ########################
@@ -63,6 +80,8 @@ class Config:
     def load_config(self):
         #Possibly add a config validation step here?
         #Clearly all surfers are smart and the DAU has like 120+ IQ Clueless
+        global cfg
+        global lastConfigReload
 
         with open("playerids.txt", "r") as cfgfile:
             for line in cfgfile.readlines():
@@ -87,8 +106,6 @@ class Config:
                         self.players.append(Player(line))
 
         cfg.print()
-
-        global lastConfigReload
         lastConfigReload = time.time()
 
     def print(self):
@@ -164,6 +181,7 @@ def check_results():
     now = time.time()
     global lastResultCheck
     global cfg
+    global lastPollResult
 
     if lastResultCheck == None or now - lastResultCheck > 2:
         lastResultCheck = now
@@ -172,7 +190,7 @@ def check_results():
         endpoint = shapi + "finishes"
         content = request(endpoint, 201)
 
-        if content != None:
+        if content != None and (lastPollResult == None or lastPollResult != content):
             for entry in content:
                 
                 if cfg.surfmap != None:
@@ -180,17 +198,22 @@ def check_results():
                         continue
 
                 if cfg.zone != None:
-                    if entry["track"] != cfg.zone:
+                    if str(entry["track"]) != cfg.zone:
                         continue
 
                 for player in cfg.players:
                     if entry["steamid"] == player.get_id():
+                        #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
                         player.add_time(entry["time"], entry["date"], entry["map"], entry["track"])
+
+            
+            lastPollResult = content
 
 
 def request(url, acceptCode):
     try:
         result = requests.get(url)
+        #print("Request: " + url + " [" + str(result.status_code) + "]")
         if result.status_code == acceptCode:
             content = result.content.decode("utf-8")
             return json.loads(content)
@@ -232,12 +255,44 @@ def pretty_print_time(seconds):
 
     return playerTimeString
 
+
+def draw_leaderboard():
+    global lastDrawnLeaderboard
+
+    #gonna use a combo of elements as key, 
+    #as just using the time as key would cause issues with identical times
+    leaderboardentries = {} 
+
+    for player in cfg.players:
+
+        #print("records for player " + player.get_name() + ": "  + str(player.get_records()))
+
+        for record in player.get_records():
+            recordstring = player.format_finish(record["time"], record["map"], record["zone"], False)
+            leaderboardentries[recordstring] = record["time"]
+            
+    leaderboard = sorted(leaderboardentries.items(), key=lambda item: item[1])
+    leaderboardstring = "Leaderboard:\n"
+
+    for entry in leaderboard:
+        leaderboardstring = leaderboardstring + str(entry[0]) + "\n"
+
+    if leaderboardstring != lastDrawnLeaderboard:
+        os.system("clear")
+        print(leaderboardstring)
+        lastDrawnLeaderboard = leaderboardstring
+
+    
+
 #######################
 # globals because idc #
 #######################
 shapi = "https://api.surfheaven.eu/api/"
 lastConfigReload = None
 lastResultCheck = None
+lastPollResult = None
+lastDrawnLeaderboard = None
+launchtime = datetime.datetime.utcnow()#.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 cfg = Config()
 
 ###########
@@ -245,12 +300,13 @@ cfg = Config()
 ###########
 def main():
 
+    global cfg
     cfg.load_config()
 
     #Enter main loop
     while True:
         #Check if config reload requested
-        #Also detects when not in foreground....
+        #Also detects when not in foreground.... meh ignore for now
         #keyboard.on_press_key('R', reload)
             
         
@@ -258,6 +314,8 @@ def main():
         check_results()
 
         #Draw leaderboard
+        draw_leaderboard()
+
 
         #reduce cpu load. response time should be good enough idc
         time.sleep(0.1)
