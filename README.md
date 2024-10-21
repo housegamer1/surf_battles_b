@@ -7,5 +7,5 @@ It will provide a leaderboard of all the times set.
 ## Requirements
 
 For now: requires python3. Might turn into an exe in the future<br>
-requires "keyboard"<br>
-pip install keyboard
+~~requires "keyboard"~~<br> #not used at the moment
+~~pip install keyboard~~
