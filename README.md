@@ -9,6 +9,8 @@ It will provide a leaderboard of all the times set.
 
 For now: requires python3. <br>
 ~~requires "keyboard"~~  #not used at the moment <br>
-~~pip install keyboard~~
+~~pip install keyboard~~<br>
+requires "requests"<br>
+pip install requests<br>
 
 ~~Might turn into an exe in the future~~ No point if randy makes his one public :)

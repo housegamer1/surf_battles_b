@@ -278,7 +278,7 @@ def draw_leaderboard():
         leaderboardstring = leaderboardstring + str(entry[0]) + "\n"
 
     if leaderboardstring != lastDrawnLeaderboard:
-        os.system("clear")
+        os.system("cls")
         print(leaderboardstring)
         lastDrawnLeaderboard = leaderboardstring
 
