@@ -14,3 +14,10 @@ requires "requests"<br>
 pip install requests<br>
 
 ~~Might turn into an exe in the future~~ No point if randy makes his one public :)
+
+
+## possible changes
+
+* group leaderboards by zone
+* reload config on the fly
+* dump results to text file on close
