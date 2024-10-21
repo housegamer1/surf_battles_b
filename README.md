@@ -21,3 +21,4 @@ pip install requests<br>
 * group leaderboards by zone
 * reload config on the fly
 * dump results to text file on close
+* reload config file on change (ensure existing players are not overwritten)
