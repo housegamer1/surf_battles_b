@@ -6,6 +6,77 @@ import datetime
 #import keyboard
 import os
 
+
+######################
+# Team related stuff #
+######################
+class Team:
+    name    = None
+    players = []
+
+    def __init__(self, name, players) -> None:
+        self.name = name
+        self.players = players
+
+    def add_player(self, player):
+        if player not in self.players:
+            self.players.append(player)
+
+    def remove_player(self, player):
+        if player in self.players:
+            self.players.remove(player)
+
+    def get_name(self):
+        return self.name
+
+    def get_players(self):
+        return self.players
+
+#######################
+# Match related stuff #
+#######################
+class Match:
+    id          = None
+    starttime   = None
+    duration    = None
+    teams       = []
+    surfmap     = None
+    zone        = None
+    leader      = None
+
+    def __init__(self, starttime, duration, surfmap, zone, teams) -> None:
+        self.starttime = starttime
+        self.duration = duration
+        self.surfmap = surfmap
+        self.zone = zone
+        self.teams = teams
+
+        idstring = ""
+        for team in self.teams:
+            for player in team.get_players():
+                idstring = idstring + player.get_id() + "_"
+
+        self.id = idstring + self.starttime
+
+    def get_id(self):
+        return self.id
+    
+    def get_starttime(self):
+        return self.starttime
+    
+    def get_duration(self):
+        return self.duration
+    
+    def get_teams(self):
+        return self.teams
+    
+    def get_surfmap(self):
+        return self.surfmap
+    
+    def get_zone(self):
+        return self.zone
+
+
 ########################
 # Player related stuff #
 ########################
@@ -68,9 +139,8 @@ class Player:
         else:
             return finishprint
 
-
 ########################
-# Config related stuff #
+# Config related stuff # #TODO rework this into a match centered background loop over matches, their teams, their players and contolling the logic based on the timed sh_request loop
 ########################
 class Config:
     players = []
@@ -161,6 +231,8 @@ def reload(arg):
 
     if now - lastConfigReload > 1:
         cfg.load_config()
+
+
 #############
 # API Calls #
 #############
@@ -174,7 +246,8 @@ def request_name(id):
 
         if "name" in content:
             return content["name"]
-
+        
+    return "N/A"
 
 
 def check_results():
@@ -282,7 +355,6 @@ def draw_leaderboard():
         print(leaderboardstring)
         lastDrawnLeaderboard = leaderboardstring
 
-    
 
 #######################
 # globals because idc #
@@ -304,12 +376,7 @@ def main():
     cfg.load_config()
 
     #Enter main loop
-    while True:
-        #Check if config reload requested
-        #Also detects when not in foreground.... meh ignore for now
-        #keyboard.on_press_key('R', reload)
-            
-        
+    while True:        
         #Periodically check api for new results
         check_results()
 
