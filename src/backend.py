@@ -43,6 +43,7 @@ class Match:
     zone            = None
     leading_team    = None
     leaderboard     = None
+    valid           = True
 
     def __init__(self, starttime, duration, surfmap, zone, teams) -> None:
         self.starttime = starttime
@@ -52,9 +53,23 @@ class Match:
         self.teams = teams
 
         idstring = ""
+        teamsize = 0
         for team in self.teams:
+            players = team.get_players()
+            playercount = len(players)
+
+            if teamsize == 0:
+                teamsize = playercount
+            elif teamsize != playercount:
+                self.valid = False
+
+
+
             for player in team.get_players():
                 idstring = idstring + str(player.get_id()) + "_"
+
+            if not self.valid:
+                idstring = "INVALID_UNEQUAL_SIZE_TEAMS_" + idstring
 
         self.id = idstring + str(self.starttime)
 
@@ -81,6 +96,9 @@ class Match:
     
     def get_leaderboard(self):
         return self.leaderboard
+    
+    def get_valid(self):
+        return self.valid
     
     def determine_leading_team(self):
         team_times = [] #trying to make it so that in theory more than 2 teams could compete in a match

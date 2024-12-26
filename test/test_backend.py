@@ -61,11 +61,13 @@ def test_match():
     player1_id = 38142345
     player2_id = 37964988
     player3_id = 246208267
+    player4_id = 58229111
     player1 = src.backend.Player(player1_id)
     player2 = src.backend.Player(player2_id)
     player3 = src.backend.Player(player3_id)
+    player4 = src.backend.Player(player4_id)
 
-    team1 = src.backend.Team("Sweden", [player1])
+    team1 = src.backend.Team("Sweden", [player1, player4])
     team2 = src.backend.Team("Germany", [player2, player3])
 
     starttime = datetime.datetime.now(datetime.timezone.utc)
@@ -76,7 +78,7 @@ def test_match():
 
     match = src.backend.Match(starttime, duration, surfmap, zone, teams)
 
-    assert match.get_id() == "38142345_37964988_246208267_" + str(starttime)
+    assert match.get_id() == "38142345_58229111_37964988_246208267_" + str(starttime)
     assert match.get_leading_team() == None
     assert match.get_leaderboard() == None
 
