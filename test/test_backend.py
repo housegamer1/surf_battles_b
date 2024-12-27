@@ -70,7 +70,6 @@ def test_match():
     player4 = src.backend.Player(player4_id)
     player5 = src.backend.Player(player5_id)
     player6 = src.backend.Player(player6_id)
-
     team1 = src.backend.Team("Sweden", [player1, player2])
     team2 = src.backend.Team("Germany", [player3, player4])
     team3 = src.backend.Team("Finland", [player5, player6])
@@ -143,3 +142,92 @@ def test_match():
     assert len(match.get_leaderboard()) == 3
     assert match.get_leaderboard()[1] == team2_dict
     assert match.get_leaderboard()[2] == team1_dict
+
+
+def test_multimatch():
+    #should pretty much not be needed since all matches run as separate instances but doesnt hurt either
+    #should i include a test where one player plays multiple matches at the same time?
+    player1_id = 38142345
+    player2_id = 58229111
+    player3_id = 37964988
+    player4_id = 246208267
+    player5_id = 44534061
+    player6_id = 340810357
+    player1 = src.backend.Player(player1_id)
+    player2 = src.backend.Player(player2_id)
+    player3 = src.backend.Player(player3_id)
+    player4 = src.backend.Player(player4_id)
+    player5 = src.backend.Player(player5_id)
+    player6 = src.backend.Player(player6_id)
+    team1 = src.backend.Team("A", [player1])
+    team2 = src.backend.Team("B", [player2])
+    team3 = src.backend.Team("C", [player3])
+    team4 = src.backend.Team("D", [player4])
+    team5 = src.backend.Team("E", [player5])
+    team6 = src.backend.Team("F", [player6])
+
+    starttime = datetime.datetime.now(datetime.timezone.utc)
+    duration = 10 #minutes
+
+    teams_match1 = [team1, team2]
+    teams_match2 = [team3, team4]
+    teams_match3 = [team5, team6]
+
+    surfmap_match1 = "surf_njv"
+    zone_match1 = 4
+
+    surfmap_match2 = "surf_blackheart"
+    zone_match2 = 0
+
+    surfmap_match3 = "surf_corruption"
+    zone_match3 = 0
+
+    match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+    match2 = src.backend.Match(starttime, duration, surfmap_match2, zone_match2, teams_match2)
+    match3 = src.backend.Match(starttime, duration, surfmap_match3, zone_match3, teams_match3)
+
+    assert match1.get_id() == "38142345_58229111_" + str(starttime.timestamp())
+    assert match2.get_id() == "37964988_246208267_" + str(starttime.timestamp())
+    assert match3.get_id() == "44534061_340810357_" + str(starttime.timestamp())
+
+    newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
+    player1.add_time(10, newtime, surfmap_match1, zone_match1)
+    player2.add_time(10, newtime, surfmap_match1, zone_match1) #player2 set the exact same time!! who is ahead? 
+
+    player3.add_time(11, newtime, surfmap_match2, zone_match2)
+    player3.add_time(9, newtime, surfmap_match1, zone_match1) #player3 was funny and completed another map (and its time faster than the match map he is signed up for)
+    player4.add_time(10, newtime, surfmap_match2, zone_match2)
+
+    player5.add_time(10, newtime, surfmap_match3, zone_match3)
+    player6.add_time(11, newtime, surfmap_match3, zone_match3)
+
+    match1.determine_leading_team()
+    match2.determine_leading_team()
+    match3.determine_leading_team()
+
+
+    draw_dict = {
+            "name": "It's a draw! Between A, B",
+            "times_set": 1,
+            "sum_time": 10
+        }
+
+    match2_dict = {
+            "name": "D",
+            "times_set": 1,
+            "sum_time": 10
+        }
+
+    match3_dict = {
+            "name": "E",
+            "times_set": 1,
+            "sum_time": 10
+        }
+
+    assert match1.get_leading_team() == draw_dict
+    assert match2.get_leading_team() == match2_dict
+    assert match3.get_leading_team() == match3_dict
+
+
+#TODO test to see what happens when a match time ends (feature not implemented yet)
+#TODO test without manually calling determine leader but instead using the 2 sec polling loop (will need mocking)

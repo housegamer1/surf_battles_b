@@ -99,6 +99,8 @@ class Match:
     
     def determine_leading_team(self):
         team_times = [] #trying to make it so that in theory more than 2 teams could compete in a match
+        times_only = []
+        has_identical_times = False
 
         for team in self.teams:
             team_sum = 0
@@ -117,6 +119,12 @@ class Match:
                 "sum_time": team_sum
             }
 
+            if team_sum > 0:
+                if team_sum not in times_only:
+                    times_only.append(team_sum)
+                else:
+                    has_identical_times = True
+
             team_times.append(teamdict.copy())
 
         sorted_by_time = sorted(team_times, key=lambda item : (item["sum_time"]))
@@ -124,6 +132,23 @@ class Match:
 
         self.leaderboard = sorted_by_completions
         self.leading_team = self.leaderboard[0]
+
+        if len(self.leaderboard) > 1 and has_identical_times:
+            leaderdict = None
+            identical_teams = []
+
+            for entry in self.leaderboard:
+                if leaderdict == None:
+                    leaderdict = entry.copy()
+                    identical_teams.append(leaderdict["name"])
+                    continue
+
+                if entry["sum_time"] == leaderdict["sum_time"] and entry["times_set"] == leaderdict["times_set"]:
+                    identical_teams.append(entry["name"])
+
+            leaderdict["name"] = "It's a draw! Between " + ", ".join(identical_teams)
+            self.leading_team = leaderdict
+
 
 
 
@@ -281,7 +306,6 @@ shapi = "https://api.surfheaven.eu/api/"
 lastConfigReload = None
 lastResultCheck = None
 lastPollResult = None
-lastDrawnLeaderboard = None
 launchtime = datetime.datetime.now(datetime.timezone.utc)#.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 ###########
