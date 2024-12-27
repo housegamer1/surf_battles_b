@@ -58,28 +58,32 @@ def test_team():
 
 
 def test_match():
-    #TODO add a test with 3 or more teams where one has less completions to see if the time sorting is kept once we apply the completions sorting
     player1_id = 38142345
-    player2_id = 37964988
-    player3_id = 246208267
-    player4_id = 58229111
+    player2_id = 58229111
+    player3_id = 37964988
+    player4_id = 246208267
+    player5_id = 44534061
+    player6_id = 340810357
     player1 = src.backend.Player(player1_id)
     player2 = src.backend.Player(player2_id)
     player3 = src.backend.Player(player3_id)
     player4 = src.backend.Player(player4_id)
+    player5 = src.backend.Player(player5_id)
+    player6 = src.backend.Player(player6_id)
 
-    team1 = src.backend.Team("Sweden", [player1, player4])
-    team2 = src.backend.Team("Germany", [player2, player3])
+    team1 = src.backend.Team("Sweden", [player1, player2])
+    team2 = src.backend.Team("Germany", [player3, player4])
+    team3 = src.backend.Team("Finland", [player5, player6])
 
     starttime = datetime.datetime.now(datetime.timezone.utc)
     duration = 10 #minutes
-    teams = [team1, team2]
+    teams = [team1, team2, team3]
     surfmap = "surf_njv"
     zone = 4
 
     match = src.backend.Match(starttime, duration, surfmap, zone, teams)
 
-    assert match.get_id() == "38142345_58229111_37964988_246208267_" + str(starttime)
+    assert match.get_id() == "38142345_58229111_37964988_246208267_44534061_340810357_" + str(starttime.timestamp())
     assert match.get_leading_team() == None
     assert match.get_leaderboard() == None
 
@@ -87,7 +91,7 @@ def test_match():
 
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
     player1.add_time(50, newtime, surfmap, zone)
-    player2.add_time(60, newtime, surfmap, zone)
+    player3.add_time(60, newtime, surfmap, zone)
     match.determine_leading_team()
 
     team1_dict = {
@@ -101,11 +105,18 @@ def test_match():
                 "sum_time": 60
             }
 
-    assert match.get_leading_team() == team1_dict
-    assert len(match.get_leaderboard()) == 2
-    assert match.get_leaderboard()[1] == team2_dict
+    team3_dict = {
+                "name": "Finland",
+                "times_set": 0,
+                "sum_time": 0
+            }
 
-    player3.add_time(60, newtime, surfmap, zone)
+    assert match.get_leading_team() == team1_dict
+    assert len(match.get_leaderboard()) == 3
+    assert match.get_leaderboard()[1] == team2_dict
+    assert match.get_leaderboard()[2] == team3_dict
+
+    player4.add_time(60, newtime, surfmap, zone)
     match.determine_leading_team()
     team2_dict = {
                 "name": "Germany",
@@ -114,8 +125,21 @@ def test_match():
             }
     
     assert match.get_leading_team() == team2_dict
-    assert len(match.get_leaderboard()) == 2
+    assert len(match.get_leaderboard()) == 3
     assert match.get_leaderboard()[1] == team1_dict
+    assert match.get_leaderboard()[2] == team3_dict
 
+    player5.add_time(50, newtime, surfmap, zone)
+    player6.add_time(50, newtime, surfmap, zone)
+    match.determine_leading_team()
 
-    
+    team3_dict = {
+            "name": "Finland",
+            "times_set": 2,
+            "sum_time": 100
+        }
+
+    assert match.get_leading_team() == team3_dict
+    assert len(match.get_leaderboard()) == 3
+    assert match.get_leaderboard()[1] == team2_dict
+    assert match.get_leaderboard()[2] == team1_dict

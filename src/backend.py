@@ -68,7 +68,7 @@ class Match:
             if not self.valid:
                 idstring = "INVALID_UNEQUAL_SIZE_TEAMS_" + idstring
 
-        self.id = idstring + str(self.starttime) #TODO make the timestamp for the id into unixtime
+        self.id = idstring + str(self.starttime.timestamp())
 
     def get_id(self):
         return self.id
