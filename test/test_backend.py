@@ -58,6 +58,7 @@ def test_team():
 
 
 def test_match():
+    #TODO add a test with 3 or more teams where one has less completions to see if the time sorting is kept once we apply the completions sorting
     player1_id = 38142345
     player2_id = 37964988
     player3_id = 246208267
