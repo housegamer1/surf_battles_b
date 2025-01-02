@@ -9,6 +9,7 @@ import datetime
 class Team:
     name    = None
     players = []
+    #TODO make diff_to_fastest_team field.
 
     def __init__(self, name, players) -> None:
         self.name = name
@@ -184,6 +185,7 @@ class Player:
     name    = None
     records = None
     server  = 0
+    #TODO make diff_to_fastest_player field.
 
     def __init__(self, id) -> None:
         self.id = id
