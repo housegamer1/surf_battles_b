@@ -1,5 +1,6 @@
 import src.backend
 import datetime
+import json
 
 #im no test engineer, go easy on me monkaS
 
@@ -211,6 +212,9 @@ def test_multimatch():
     assert match1.get_leaderboard()["leading_team"] == "It's a draw! Between A, B"
     assert match2.get_leaderboard()["leading_team"] == "D"
     assert match3.get_leaderboard()["leading_team"] == "E"
+
+    # with open("match3_leaderboard.txt", "w") as log: #just for checking the json early on. should probably make a test for that once i have my endpoints #TODO
+    #     json.dump(src.backend.get_json(match3.get_leaderboard()), log)
 
 
 #TODO test to see what happens when a match time ends (feature not implemented yet)

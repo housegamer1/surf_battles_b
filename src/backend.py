@@ -28,6 +28,7 @@ class Team:
     def get_players(self):
         return self.players
 
+
 #######################
 # Match related stuff #
 #######################
@@ -126,9 +127,6 @@ class Match:
         sorted_by_time = sorted(team_times, key=lambda item : (item["sum_time"]))
         sorted_by_completions = sorted(sorted_by_time, key=lambda item : (item["times_set"]), reverse=True) # should be sorted by highest amount of completions with lowest time
         
-
-        a = sorted_by_completions[0]
-        b = sorted_by_completions[0]["team"]
         self.leaderboard = {
             "leading_team" : sorted_by_completions[0]["team"].get_name(),
             "entries": sorted_by_completions
@@ -303,6 +301,15 @@ def request(url, acceptCode):
     except requests.exceptions.RequestException as e:
         print("Caught error: " + str(e))
         return None
+
+
+##################################
+# json stuff yoinked from da web #
+##################################
+def get_json(obj):
+    return json.loads(
+        json.dumps(obj, default=lambda o: getattr(o, '__dict__', str(o)))
+    )
 
 
 #######################
