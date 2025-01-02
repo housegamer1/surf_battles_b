@@ -38,7 +38,6 @@ class Match:
     teams           = []
     surfmap         = None
     zone            = None
-    leading_team    = None
     leaderboard     = None
     valid           = True
 
@@ -88,9 +87,6 @@ class Match:
     def get_zone(self):
         return self.zone
     
-    def get_leading_team(self):
-        return self.leading_team
-    
     def get_leaderboard(self):
         return self.leaderboard
     
@@ -113,8 +109,8 @@ class Match:
                     team_sum = team_sum + pb
                     players_set_times = players_set_times + 1
 
-            teamdict = {
-                "name": team.get_name(),
+            teamdict = { #TODO expand leaderboard objects to contain the times set by the players
+                "team": team,
                 "times_set": players_set_times,
                 "sum_time": team_sum
             }
@@ -129,25 +125,30 @@ class Match:
 
         sorted_by_time = sorted(team_times, key=lambda item : (item["sum_time"]))
         sorted_by_completions = sorted(sorted_by_time, key=lambda item : (item["times_set"]), reverse=True) # should be sorted by highest amount of completions with lowest time
+        
 
-        self.leaderboard = sorted_by_completions
-        self.leading_team = self.leaderboard[0]
+        a = sorted_by_completions[0]
+        b = sorted_by_completions[0]["team"]
+        self.leaderboard = {
+            "leading_team" : sorted_by_completions[0]["team"].get_name(),
+            "entries": sorted_by_completions
+        }
 
-        if len(self.leaderboard) > 1 and has_identical_times:
+        if len(self.leaderboard["entries"]) > 1 and has_identical_times:
             leaderdict = None
             identical_teams = []
 
-            for entry in self.leaderboard:
+            for entry in self.leaderboard["entries"]:
                 if leaderdict == None:
                     leaderdict = entry.copy()
-                    identical_teams.append(leaderdict["name"])
+                    identical_teams.append(leaderdict["team"].get_name()) #add leading team to check if anyone tied them. this means tie check is only effective for the lead though..
                     continue
 
                 if entry["sum_time"] == leaderdict["sum_time"] and entry["times_set"] == leaderdict["times_set"]:
-                    identical_teams.append(entry["name"])
+                    identical_teams.append(entry["team"].get_name())
 
-            leaderdict["name"] = "It's a draw! Between " + ", ".join(identical_teams)
-            self.leading_team = leaderdict
+            if len(identical_teams) > 1:
+                self.leaderboard["leading_team"]  = "It's a draw! Between " + ", ".join(identical_teams)
 
 
 
@@ -184,6 +185,7 @@ class Player:
     id      = None
     name    = None
     records = None
+    server  = 0
 
     def __init__(self, id) -> None:
         self.id = id
@@ -234,6 +236,9 @@ class Player:
                     fastest_time = time
                 
         return fastest_time
+    
+    def get_server_number(self):
+        return self.server
 
 #############
 # API Calls #
@@ -261,6 +266,7 @@ def check_results():
     if lastResultCheck == None or now - lastResultCheck > 2: #allow each new api request only after 2 seconds
         lastResultCheck = now
             
+        #TODO with every refresh cycle, go through all players in the matches and see if they are connected and if that server is running the right map
         #using general api and filtering here to reduce api calls
         endpoint = shapi + "finishes"
         content = request(endpoint, 201)

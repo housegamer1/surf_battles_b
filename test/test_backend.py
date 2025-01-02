@@ -83,7 +83,6 @@ def test_match():
     match = src.backend.Match(starttime, duration, surfmap, zone, teams)
 
     assert match.get_id() == "38142345_58229111_37964988_246208267_44534061_340810357_" + str(starttime.timestamp())
-    assert match.get_leading_team() == None
     assert match.get_leaderboard() == None
 
     match.determine_leading_team() # calling the function here just to see what happens when no pbs are set. any outcome is random as it sorts 2 entries with time 0 so im not gonna assert anything
@@ -94,54 +93,58 @@ def test_match():
     match.determine_leading_team()
 
     team1_dict = {
-                "name": "Sweden",
+                "team": team1,
                 "times_set": 1,
                 "sum_time": 50
             }
     team2_dict = {
-                "name": "Germany",
+                "team": team2,
                 "times_set": 1,
                 "sum_time": 60
             }
 
     team3_dict = {
-                "name": "Finland",
+                "team": team3,
                 "times_set": 0,
                 "sum_time": 0
             }
 
-    assert match.get_leading_team() == team1_dict
-    assert len(match.get_leaderboard()) == 3
-    assert match.get_leaderboard()[1] == team2_dict
-    assert match.get_leaderboard()[2] == team3_dict
+    assert len(match.get_leaderboard()["entries"]) == 3
+    assert match.get_leaderboard()["leading_team"] == "Sweden"
+    assert match.get_leaderboard()["entries"][0] == team1_dict
+    assert match.get_leaderboard()["entries"][1] == team2_dict
+    assert match.get_leaderboard()["entries"][2] == team3_dict
 
     player4.add_time(60, newtime, surfmap, zone)
     match.determine_leading_team()
     team2_dict = {
-                "name": "Germany",
+                "team": team2,
                 "times_set": 2,
                 "sum_time": 120
             }
     
-    assert match.get_leading_team() == team2_dict
-    assert len(match.get_leaderboard()) == 3
-    assert match.get_leaderboard()[1] == team1_dict
-    assert match.get_leaderboard()[2] == team3_dict
+    
+    assert len(match.get_leaderboard()["entries"]) == 3
+    assert match.get_leaderboard()["leading_team"] == "Germany"
+    assert match.get_leaderboard()["entries"][0] == team2_dict
+    assert match.get_leaderboard()["entries"][1] == team1_dict
+    assert match.get_leaderboard()["entries"][2] == team3_dict
 
     player5.add_time(50, newtime, surfmap, zone)
     player6.add_time(50, newtime, surfmap, zone)
     match.determine_leading_team()
 
     team3_dict = {
-            "name": "Finland",
+            "team": team3,
             "times_set": 2,
             "sum_time": 100
         }
 
-    assert match.get_leading_team() == team3_dict
-    assert len(match.get_leaderboard()) == 3
-    assert match.get_leaderboard()[1] == team2_dict
-    assert match.get_leaderboard()[2] == team1_dict
+    assert len(match.get_leaderboard()["entries"]) == 3
+    assert match.get_leaderboard()["leading_team"] == "Finland"
+    assert match.get_leaderboard()["entries"][0] == team3_dict
+    assert match.get_leaderboard()["entries"][1] == team2_dict
+    assert match.get_leaderboard()["entries"][2] == team1_dict
 
 
 def test_multimatch():
@@ -205,28 +208,9 @@ def test_multimatch():
     match2.determine_leading_team()
     match3.determine_leading_team()
 
-
-    draw_dict = {
-            "name": "It's a draw! Between A, B",
-            "times_set": 1,
-            "sum_time": 10
-        }
-
-    match2_dict = {
-            "name": "D",
-            "times_set": 1,
-            "sum_time": 10
-        }
-
-    match3_dict = {
-            "name": "E",
-            "times_set": 1,
-            "sum_time": 10
-        }
-
-    assert match1.get_leading_team() == draw_dict
-    assert match2.get_leading_team() == match2_dict
-    assert match3.get_leading_team() == match3_dict
+    assert match1.get_leaderboard()["leading_team"] == "It's a draw! Between A, B"
+    assert match2.get_leaderboard()["leading_team"] == "D"
+    assert match3.get_leaderboard()["leading_team"] == "E"
 
 
 #TODO test to see what happens when a match time ends (feature not implemented yet)
