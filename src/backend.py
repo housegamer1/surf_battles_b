@@ -2,6 +2,7 @@ import requests
 import json
 import time
 import datetime
+import threading
 
 ######################
 # Team related stuff #
@@ -76,6 +77,9 @@ class Match:
                 idstring = "INVALID_UNEQUAL_SIZE_TEAMS_" + idstring
 
         self.id = idstring + str(self.starttime.timestamp())
+
+        global matches
+        matches.append(self)
 
     def get_id(self):
         return self.id
@@ -304,37 +308,6 @@ def request_name(id):
     return "N/A"
 
 
-def check_results():
-    now = time.time()
-    global lastResultCheck
-    global cfg
-    global lastPollResult
-
-    if lastResultCheck == None or now - lastResultCheck > 2: #allow each new api request only after 2 seconds
-        lastResultCheck = now
-            
-        #TODO with every refresh cycle, go through all players in the matches and see if they are connected and if that server is running the right map
-        #using general api and filtering here to reduce api calls
-        endpoint = shapi + "finishes"
-        content = request(endpoint, 201)
-
-        if content != None and (lastPollResult == None or lastPollResult != content):
-            for entry in content:
-                
-                if cfg.surfmap != None:
-                    if entry["map"] != cfg.surfmap:
-                        continue
-
-                if cfg.zone != None:
-                    if str(entry["track"]) != cfg.zone:
-                        continue
-
-                for player in cfg.players:
-                    if entry["steamid"] == player.get_id():
-                        #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
-                        player.add_time(entry["time"], entry["date"], entry["map"], entry["track"])
-
-            lastPollResult = content
 
 
 def request(url, acceptCode):
@@ -371,23 +344,44 @@ def trunc_to_tick(number):
 # globals because idc #
 #######################
 shapi = "https://api.surfheaven.eu/api/"
-lastConfigReload = None
 lastResultCheck = None
 lastPollResult = None
 launchtime = datetime.datetime.now(datetime.timezone.utc)#.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+matches = []
+threadcontrol = threading.Event()
 
-###########
-# Main :) #
-###########
-def main():
 
-    while True:        
-        #Periodically check api for new results
-        check_results()
 
-        #reduce cpu load. response time should be good enough idc
-        time.sleep(0.1)
-    
-    
-if __name__ == "__main__":
-    main()
+
+#############
+# main loop #
+#############
+def backend_loop():
+    while not threadcontrol.is_set():
+        global lastPollResult
+        #TODO with every refresh cycle, go through all players in the matches and see if they are connected and if that server is running the right map
+        #using general api and filtering here to reduce api calls
+        endpoint = shapi + "finishes"
+        content = request(endpoint, 201)
+        print("Polling")
+
+        if content != None and (lastPollResult == None or lastPollResult != content):
+            for match in matches:
+                for entry in content:
+                    
+                    if match.get_surfmap() != None:
+                        if entry["map"] != match.get_surfmap():
+                            continue
+
+                    if match.get_zone() != None:
+                        if str(entry["track"]) != match.get_zone():
+                            continue
+
+                    for team in match.get_teams():
+                        for player in team.get_players():
+                            if entry["steamid"] == player.get_id():
+                                #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
+                                player.add_time(entry["time"], entry["date"], entry["map"], entry["track"])
+
+                lastPollResult = content
+        time.sleep(2)
