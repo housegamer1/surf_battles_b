@@ -217,5 +217,99 @@ def test_multimatch():
     #     json.dump(src.backend.get_json(match3.get_leaderboard()), log)
 
 
-#TODO test to see what happens when a match time ends (feature not implemented yet)
+def test_determine_team_delta():
+    player1_id = 38142345
+    player2_id = 58229111
+    player3_id = 37964988
+    player1 = src.backend.Player(player1_id)
+    player2 = src.backend.Player(player2_id)
+    player3 = src.backend.Player(player3_id)
+    team1 = src.backend.Team("A", [player1])
+    team2 = src.backend.Team("B", [player2])
+    team3 = src.backend.Team("C", [player3])
+
+    starttime = datetime.datetime.now(datetime.timezone.utc)
+    duration = 10 #minutes
+
+    teams_match1 = [team1, team2, team3]
+    surfmap_match1 = "surf_njv"
+    zone_match1 = 4
+
+    match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+
+    newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
+    player1.add_time(10, newtime, surfmap_match1, zone_match1)
+    player2.add_time(10.015, newtime, surfmap_match1, zone_match1) #1tick diff
+    player3.add_time(13.625, newtime, surfmap_match1, zone_match1)
+
+    team1_dict = {
+                "team": team1,
+                "times_set": 1,
+                "sum_time": 10
+            }
+    team2_dict = {
+                "team": team2,
+                "times_set": 1,
+                "sum_time": 10.015
+            }
+
+    team3_dict = {
+                "team": team3,
+                "times_set": 1,
+                "sum_time": 13.625
+            }
+
+    match1.determine_leading_team() #required for determining team deltas
+
+    assert len(match1.get_leaderboard()["entries"]) == 3
+    assert match1.get_leaderboard()["leading_team"] == "A"
+    assert match1.get_leaderboard()["entries"][0] == team1_dict
+    assert match1.get_leaderboard()["entries"][1] == team2_dict
+    assert match1.get_leaderboard()["entries"][2] == team3_dict
+
+    match1.determine_team_delta()
+
+    assert team1.get_diff_to_fastest_team() == 0
+    assert team2.get_diff_to_fastest_team() == 0.015
+    assert team3.get_diff_to_fastest_team() == 3.625
+
+
+def test_determine_player_delta():
+    player1_id = 38142345
+    player2_id = 58229111
+    player3_id = 37964988
+    player4_id = 246208267
+    player1 = src.backend.Player(player1_id)
+    player2 = src.backend.Player(player2_id)
+    player3 = src.backend.Player(player3_id)
+    player4 = src.backend.Player(player4_id)
+    team1 = src.backend.Team("A", [player1, player2])
+    team2 = src.backend.Team("B", [player3, player4])
+
+    starttime = datetime.datetime.now(datetime.timezone.utc)
+    duration = 10 #minutes
+
+    teams_match1 = [team1, team2]
+    surfmap_match1 = "surf_njv"
+    zone_match1 = 4
+
+    match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+    newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
+
+
+    player1.add_time(None, newtime, surfmap_match1, zone_match1)
+    player2.add_time(10.015, newtime, surfmap_match1, zone_match1)
+    player3.add_time(8.75, newtime, surfmap_match1, zone_match1)
+    player4.add_time(8, newtime, surfmap_match1, zone_match1)
+
+    match1.determine_leading_team() #required for determining player deltas
+    match1.determine_player_delta()
+
+    assert player1.get_diff_to_fastest_player() == None
+    assert player2.get_diff_to_fastest_player() == 2.015
+    assert player3.get_diff_to_fastest_player() == 0.75
+    assert player4.get_diff_to_fastest_player() == 0
+    
+
+#IGNORED. FOR NOW ONLY FRONTEND KEEPS TRACK OF MATCH TIME. test to see what happens when a match time ends (feature not implemented yet).
 #TODO test without manually calling determine leader but instead using the 2 sec polling loop (will need mocking)

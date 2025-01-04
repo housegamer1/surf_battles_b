@@ -9,7 +9,7 @@ import datetime
 class Team:
     name    = None
     players = []
-    #TODO make diff_to_fastest_team field.
+    diff_to_fastest_team = None
 
     def __init__(self, name, players) -> None:
         self.name = name
@@ -29,19 +29,25 @@ class Team:
     def get_players(self):
         return self.players
 
+    def set_diff_to_fastest_team(self, diff):
+        self.diff_to_fastest_team = trunc_to_tick(diff)
+
+    def get_diff_to_fastest_team(self):
+        return self.diff_to_fastest_team
 
 #######################
 # Match related stuff #
 #######################
 class Match:
-    id              = None
-    starttime       = None
-    duration        = None
-    teams           = []
-    surfmap         = None
-    zone            = None
-    leaderboard     = None
-    valid           = True
+    id                  = None
+    starttime           = None
+    duration            = None
+    teams               = []
+    surfmap             = None
+    zone                = None
+    leaderboard         = None
+    valid               = True
+
 
     def __init__(self, starttime, duration, surfmap, zone, teams) -> None:
         self.starttime = starttime
@@ -149,6 +155,41 @@ class Match:
             if len(identical_teams) > 1:
                 self.leaderboard["leading_team"]  = "It's a draw! Between " + ", ".join(identical_teams)
 
+    def determine_team_delta(self):
+        if self.leaderboard != None:
+            leading_time = None
+
+            for team in self.leaderboard["entries"]:
+                team_time = team["sum_time"]
+
+                if leading_time == None:
+                    leading_time = team_time
+            
+                team["team"].set_diff_to_fastest_team(team_time - leading_time)
+            
+    def determine_player_delta(self):
+        if self.leaderboard != None:
+            players = []
+            leading_time = None
+
+            for team in self.leaderboard["entries"]:
+                teamobj = team["team"]
+                team_players = teamobj.get_players()
+
+                for player in team_players:
+                    pb = player.get_personal_best(self.surfmap, self.zone)
+                    if pb != None:
+                        players.append({"player":player, "time":pb})
+    
+            sorted_by_time = sorted(players, key=lambda item : (item["time"]))
+
+            for player in sorted_by_time:
+                pb = player["time"]
+
+                if leading_time == None:
+                    leading_time = pb
+
+                player["player"].set_diff_to_fastest_player(pb - leading_time)
 
 
 
@@ -185,7 +226,7 @@ class Player:
     name    = None
     records = None
     server  = 0
-    #TODO make diff_to_fastest_player field.
+    diff_to_fastest_player = None
 
     def __init__(self, id) -> None:
         self.id = id
@@ -239,6 +280,12 @@ class Player:
     
     def get_server_number(self):
         return self.server
+    
+    def set_diff_to_fastest_player(self, diff):
+        self.diff_to_fastest_player = trunc_to_tick(diff)
+
+    def get_diff_to_fastest_player(self):
+        return self.diff_to_fastest_player
 
 #############
 # API Calls #
@@ -313,6 +360,12 @@ def get_json(obj):
         json.dumps(obj, default=lambda o: getattr(o, '__dict__', str(o)))
     )
 
+
+###################
+# ghetto truncing #
+###################
+def trunc_to_tick(number):
+    return float(str(number)[:5])
 
 #######################
 # globals because idc #
