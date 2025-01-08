@@ -3,6 +3,7 @@ import json
 import time
 import datetime
 import threading
+import dateutil
 
 ######################
 # Team related stuff #
@@ -243,7 +244,7 @@ class Player:
         if isinstance(settimestamp, datetime.datetime):
             finishstamp = settimestamp
         else:
-            finishstamp = datetime.datetime.strptime(settimestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+            finishstamp = dateutil.parser.parse(settimestamp)
 
         #prevent records from before program launch being recorded
         if finishstamp > launchtime:
@@ -374,14 +375,18 @@ def backend_loop():
                             continue
 
                     if match.get_zone() != None:
-                        if str(entry["track"]) != match.get_zone():
+                        if entry["track"] != match.get_zone():
                             continue
 
                     for team in match.get_teams():
                         for player in team.get_players():
-                            if entry["steamid"] == player.get_id():
+                            if entry["steamid"] == str(player.get_id()):
                                 #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
                                 player.add_time(entry["time"], entry["date"], entry["map"], entry["track"])
+
+                match.determine_leading_team()
+                match.determine_team_delta()
+                match.determine_player_delta()
 
                 lastPollResult = content
         time.sleep(2)

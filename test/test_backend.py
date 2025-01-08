@@ -1,6 +1,9 @@
 import src.backend
 import datetime
+import threading
+import time
 import json
+
 
 #im no test engineer, go easy on me monkaS
 
@@ -311,5 +314,71 @@ def test_determine_player_delta():
     assert player4.get_diff_to_fastest_player() == 0
     
 
-#IGNORED. FOR NOW ONLY FRONTEND KEEPS TRACK OF MATCH TIME. test to see what happens when a match time ends (feature not implemented yet).
-#TODO test without manually calling determine leader but instead using the 2 sec polling loop (will need mocking)
+def mock_return_from_api(*args):
+        timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        finishes_json = """
+[
+    {
+        "id": 358114,
+        "name": "cat lol",
+        "steamid": "208264715",
+        "map": "surf_not_a_real_map",
+        "time": 17.46875,
+        "ispr": 1,
+        "iswr": 1,
+        "isfirstrec": 1,
+        "rank": 1,
+        "track": 0,
+        "tier": 9,
+        "date": REPLACEME,
+        "finishspeed": 2849.617431640625,
+        "session_mapseconds": 7219,
+        "session_zoneseconds": 589,
+        "session_zonestarts": 171,
+        "session_levelseconds": 1998
+
+    }
+]"""
+        finishes_json = finishes_json.replace("REPLACEME", '"' + timestamp + '"')
+        return json.loads(finishes_json)
+
+
+def test_poll_loop(mocker):
+    mocker.patch.object(src.backend, "request", side_effect=mock_return_from_api)
+
+
+    player1_id = 208264715
+    player2_id = 58229111
+    player1 = src.backend.Player(player1_id)
+    player2 = src.backend.Player(player2_id)
+    team1 = src.backend.Team("A", [player1])
+    team2 = src.backend.Team("B", [player2])
+
+    starttime = datetime.datetime.now(datetime.timezone.utc)
+    duration = 10 #minutes
+
+    teams_match1 = [team1, team2]
+    surfmap_match1 = "surf_not_a_real_map"
+    zone_match1 = 0
+
+    match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+    assert match1.get_leaderboard() == None
+
+    #start main backend loop in a thread
+    loop = threading.Thread(target=src.backend.backend_loop)
+    loop.start()
+
+    #do whatever we need to do
+    time.sleep(3) #give the backend thread enough time to run at least one loop
+
+    try:
+        assert match1.get_leaderboard()["leading_team"] == "A"
+        assert match1.get_leaderboard()["entries"][0]["times_set"] == 1
+    except AssertionError: #if we dont catch this, the thread will never terminate it seems
+        src.backend.threadcontrol.set()
+        loop.join()
+        raise #brings up the caught assertion error again
+
+    #end the thread
+    src.backend.threadcontrol.set()
+    loop.join()

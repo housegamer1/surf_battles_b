@@ -2,14 +2,27 @@ from flask import Flask
 import backend
 import threading
 import datetime
-import atexit
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def hello_world():
-    return backend.get_json(backend.matches)
+    return backend.get_json(backend.matches[0].get_leaderboard())
+
+@app.route("/settimes")
+def settimes():
+    now = datetime.datetime.now(datetime.timezone.utc)
+    match = backend.matches[0]
+    time = 10
+    for team in match.get_teams():
+        time = time +1
+        for player in team.get_players():
+            player.add_time(time, now, "surf_njv", 4)
+
+    match.determine_leading_team()
+    match.determine_team_delta()
+    match.determine_player_delta()
 
 @app.route("/newmatch")
 def newmatch():
