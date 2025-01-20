@@ -128,11 +128,11 @@ class Match:
                 "sum_time": team_sum
             }
 
-            if team_sum > 0:
-                if team_sum not in times_only:
-                    times_only.append(team_sum)
-                else:
-                    has_identical_times = True
+
+            if team_sum not in times_only:
+                times_only.append(team_sum)
+            else:
+                has_identical_times = True
 
             team_times.append(teamdict.copy())
 
@@ -158,7 +158,7 @@ class Match:
                     identical_teams.append(entry["team"].get_name())
 
             if len(identical_teams) > 1:
-                self.leaderboard["leading_team"]  = "It's a draw! Between " + ", ".join(identical_teams)
+                self.leaderboard["leading_team"]  = "It's a draw! Between " + " and ".join(identical_teams)
 
     def determine_team_delta(self):
         if self.leaderboard != None:
