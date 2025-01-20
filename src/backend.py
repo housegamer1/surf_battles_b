@@ -311,7 +311,7 @@ def request_name(id):
 
 
 
-def request(url, acceptCode):
+def request(url, acceptCode=200):
     try:
         result = requests.get(url)
         #print("Request: " + url + " [" + str(result.status_code) + "]")

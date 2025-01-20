@@ -8,7 +8,9 @@ Intended for https://github.com/sKzAy/surf_battles
 ## Requirements
 
 requires python3 <br>
-requires "requests"<br>
+requires requests<br>
+requires flask<br>
+requires dateutil<br>
 
 
 ## Info
