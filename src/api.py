@@ -32,7 +32,7 @@ def addmatch():
             data = json.loads(rq_json)
 
         if validate_request_data(data):
-            return prepare_new_match(data)
+            return prepare_new_match(data), 201
         else:
             return "post request missing essential data"
 

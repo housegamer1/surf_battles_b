@@ -84,28 +84,28 @@ class Match:
 
     def get_id(self):
         return self.id
-    
+
     def get_starttime(self):
         return self.starttime
-    
+
     def get_duration(self):
         return self.duration
-    
+
     def get_teams(self):
         return self.teams
-    
+
     def get_surfmap(self):
         return self.surfmap
-    
+
     def get_zone(self):
         return self.zone
-    
+
     def get_leaderboard(self):
         return self.leaderboard
-    
+
     def get_valid(self):
         return self.valid
-    
+
     def determine_leading_team(self):
         team_times = [] #trying to make it so that in theory more than 2 teams could compete in a match
         times_only = []
@@ -138,7 +138,7 @@ class Match:
 
         sorted_by_time = sorted(team_times, key=lambda item : (item["sum_time"]))
         sorted_by_completions = sorted(sorted_by_time, key=lambda item : (item["times_set"]), reverse=True) # should be sorted by highest amount of completions with lowest time
-        
+
         self.leaderboard = {
             "leading_team" : sorted_by_completions[0]["team"].get_name(),
             "entries": sorted_by_completions
@@ -169,9 +169,9 @@ class Match:
 
                 if leading_time == None:
                     leading_time = team_time
-            
+
                 team["team"].set_diff_to_fastest_team(team_time - leading_time)
-            
+
     def determine_player_delta(self):
         if self.leaderboard != None:
             players = []
@@ -185,7 +185,7 @@ class Match:
                     pb = player.get_personal_best(self.surfmap, self.zone)
                     if pb != None:
                         players.append({"player":player, "time":pb})
-    
+
             sorted_by_time = sorted(players, key=lambda item : (item["time"]))
 
             for player in sorted_by_time:
@@ -215,13 +215,13 @@ class Record:
 
     def get_time(self):
         return self.time
-    
+
     def get_timestamp(self):
         return self.timestamp
-    
+
     def get_map(self):
         return self.map
-    
+
     def get_zone(self):
         return self.zone
 
@@ -230,24 +230,24 @@ class Player:
     id      = None
     name    = None
     records = None
-    server  = 0
     diff_to_fastest_player = None
+    connected = None
 
     def __init__(self, id) -> None:
         self.id = id
         self.name = request_name(self.id)
         self.records = []
+        self.connected = "Offline"
 
-    def add_time(self, settime, settimestamp, map, zone):
-        global launchtime
-        
+    def add_time(self, settime, settimestamp, map, zone, starttime):
+
         if isinstance(settimestamp, datetime.datetime):
             finishstamp = settimestamp
         else:
             finishstamp = dateutil.parser.parse(settimestamp)
 
         #prevent records from before program launch being recorded
-        if finishstamp > launchtime:
+        if finishstamp > starttime:
 
             finish = Record(settime, settimestamp, map, zone)
 
@@ -262,16 +262,16 @@ class Player:
 
     def tostring(self):
         return str(self.name) + "    " + str(self.id)
-    
+
     def get_id(self):
         return self.id
-    
+
     def get_name(self):
         return self.name
 
     def get_records(self):
         return self.records
-    
+
     def get_personal_best(self, surfmap, zone):
         fastest_time = None
         for record in self.records:
@@ -280,17 +280,28 @@ class Player:
 
                 if fastest_time == None or time < fastest_time:
                     fastest_time = time
-                
+
         return fastest_time
-    
-    def get_server_number(self):
-        return self.server
-    
+
     def set_diff_to_fastest_player(self, diff):
         self.diff_to_fastest_player = trunc_to_tick(diff)
 
     def get_diff_to_fastest_player(self):
         return self.diff_to_fastest_player
+
+    def determine_connected(self, online, surfmap):
+    #this function doesnt request by itself. requesting for every player would be overkill. instead it takes the result out of the main loop so we request only ever 2 sec.
+        for connectedplayer in online:
+            if connectedplayer["steamid"] == self.get_id():
+                if connectedplayer["map"] == surfmap:
+                    self.connected = "Online"
+                    return
+                else:
+                    self.connected = "Online, wrong map"
+                    return
+
+        self.connected = "Offline"
+
 
 #############
 # API Calls #
@@ -305,11 +316,8 @@ def request_name(id):
 
         if "name" in content:
             return content["name"]
-        
+
     return "N/A"
-
-
-
 
 def request(url, acceptCode=200):
     try:
@@ -320,7 +328,7 @@ def request(url, acceptCode=200):
             return json.loads(content)
 
         return None
-                   
+
     except requests.exceptions.RequestException as e:
         print("Caught error: " + str(e))
         return None
@@ -364,25 +372,30 @@ def backend_loop():
         #using general api and filtering here to reduce api calls
         endpoint = shapi + "finishes"
         content = request(endpoint, 201)
-        print("Polling")
+        online = request(shapi + "online")
+        #print(".", end="", flush=True)
 
-        if content != None and (lastPollResult == None or lastPollResult != content):
-            for match in matches:
-                for entry in content:
-                    
-                    if match.get_surfmap() != None:
-                        if entry["map"] != match.get_surfmap():
-                            continue
 
-                    if match.get_zone() != None:
-                        if entry["track"] != match.get_zone():
-                            continue
+        for match in matches:
+            for entry in content:
 
-                    for team in match.get_teams():
-                        for player in team.get_players():
+
+
+                #if match.get_surfmap() != None:
+                #    if entry["map"] != match.get_surfmap():
+                #        continue
+
+                #if match.get_zone() != None:
+                #    if entry["track"] != match.get_zone():
+                #        continue
+
+                for team in match.get_teams():
+                    for player in team.get_players():
+                        player.determine_connected(online, match.get_surfmap())
+                        if content != None and (lastPollResult == None or lastPollResult != content):
                             if entry["steamid"] == str(player.get_id()):
                                 #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
-                                player.add_time(entry["time"], entry["date"], entry["map"], entry["track"])
+                                player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime())
 
                 match.determine_leading_team()
                 match.determine_team_delta()
