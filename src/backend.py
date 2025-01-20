@@ -247,7 +247,7 @@ class Player:
             finishstamp = dateutil.parser.parse(settimestamp)
 
         #prevent records from before program launch being recorded
-        if finishstamp > starttime:
+        if finishstamp >= starttime:
 
             finish = Record(settime, settimestamp, map, zone)
 
