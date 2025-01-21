@@ -31,21 +31,47 @@ def addmatch():
         else:
             data = json.loads(rq_json)
 
-        if validate_request_data(data):
+        if validate_add_request(data):
             return prepare_new_match(data), 201
         else:
-            return "post request missing essential data"
-
+            return "post request missing essential data", 400
     else:
-        return "Invalid content type. Please use application/json"
+        return "Invalid content type. Please use application/json", 406
 
+
+@api_routes.route("/removematch", methods=["POST"])
+def removematch():
+    if request.content_type == "application/json":
+        rq_json = request.json
+        if isinstance(rq_json, dict):
+            data = rq_json
+        else:
+            data = json.loads(rq_json)
+
+        if validate_remove_request(data):
+            id = data["id"]
+            found_match = None
+
+            for match in backend.matches:
+                if match.get_id() == id:
+                    found_match = match
+                    break
+
+            #i dont want to modify the list while i loop over it. surely it would be fine but lets just not.
+            if found_match != None:
+                backend.matches.remove(found_match)
+                return "Deleted match: " + id, 200
+            else:
+                return "Match not deleted. Could not find match id: " + id, 404
+        else:
+            return "post request missing essential data", 400
+    else:
+        return "Invalid content type. Please use application/json", 406
 
 
 
 #functions to prepare requests for the backend
-
 def validate_zone_exists(map, zone):
-
     if isinstance(zone,str) and zone.isdecimal():
         zone = int(zone)
 
@@ -55,9 +81,7 @@ def validate_zone_exists(map, zone):
             return True
     return False
 
-
-
-def validate_request_data(data):
+def validate_add_request(data):
     has_map = "map" in data
     has_zone = "zone" in data
     zone_exists = has_map and has_zone and validate_zone_exists(data["map"], data["zone"])
@@ -73,6 +97,11 @@ def validate_request_data(data):
                 teams_with_players = teams_with_players + 1
             
     return zone_exists and has_teams and teamcount != 0 and (teams_with_players == teamcount)
+
+def validate_remove_request(data):
+    #so far only check id. not sure if we need to check more in the future
+    if "id" in data:
+        return True
 
 def prepare_new_match(data):
     surfmap = data["map"]

@@ -1,14 +1,14 @@
 import src.api
 import json
 
-def test_validate_request_data():
+def test_validate_add_request():
     data = """{
     "map":"helloworld",
     "zone":0
 }
 """
     jsondata = json.loads(data)
-    assert src.api.validate_request_data(jsondata) == False
+    assert src.api.validate_add_request(jsondata) == False
 
     data = """{
     "map":"surf_helloworld",
@@ -26,4 +26,4 @@ def test_validate_request_data():
 }
 """
     jsondata = json.loads(data)
-    assert src.api.validate_request_data(jsondata) == True
+    assert src.api.validate_add_request(jsondata) == True
