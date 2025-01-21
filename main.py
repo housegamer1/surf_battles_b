@@ -12,7 +12,7 @@ def main():
     loop.start()
 
     #start flask handling in main thread
-    app.run()
+    app.run(host="0.0.0.0")
     print("Shutting down")
     backend.threadcontrol.set() #close thread once flask closes
     loop.join()
