@@ -1,13 +1,33 @@
-FROM python:3.12.8-bookworm
+FROM python:3.12-slim AS builder
 
-WORKDIR .
+# Create and change to the app directory.
+WORKDIR /app
 
-COPY requirements.txt .
+# Retrieve application dependencies.
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt ./
+RUN python3 -m venv venv
+ENV PATH=/app/venv/bin/:$PATH
 
-COPY . .
+RUN pip install -r requirements.txt
+
+# Copy local code to the container image.
+COPY . ./
+
+FROM gcr.io/distroless/python3
+
+## Copy the binary to the production image from the builder stage.
+COPY --from=builder /app /app
+
+WORKDIR /app
+
+ENV ENVIRONMENT="production"
+ENV PYTHONUNBUFFERED=1
+ENV PORT="5000"
+ENV PYTHONPATH=/app/venv/lib/python3.12/site-packages
+ENV PATH=/app/venv/bin/:$PATH
 
 EXPOSE 5000
 
-CMD ["python", "main.py"]
+## Run the web service on container startup.
+CMD ["main.py"]
