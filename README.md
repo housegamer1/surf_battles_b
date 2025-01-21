@@ -13,6 +13,7 @@ requires flask<br>
 requires dateutil<br>
 
 
-## Info
+## Docker
 
-the playerids.txt file as well as further things related to the standalone functionality from the original forked product will be removed in the future
+    docker build -t surf_battles_b/backend:vX.X.X .
+

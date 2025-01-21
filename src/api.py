@@ -39,7 +39,7 @@ def addmatch():
         return "Invalid content type. Please use application/json", 406
 
 
-@api_routes.route("/removematch", methods=["POST"])
+@api_routes.route("/removematch", methods=["DELETE"])
 def removematch():
     if request.content_type == "application/json":
         rq_json = request.json
