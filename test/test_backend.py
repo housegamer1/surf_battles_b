@@ -86,7 +86,6 @@ def test_match():
 
     match = src.backend.Match(starttime, duration, surfmap, zone, teams)
 
-    assert match.get_id() == "38142345_58229111_37964988_246208267_44534061_340810357_" + str(starttime.timestamp())
     assert match.get_leaderboard() == None
 
     match.determine_leading_team() # calling the function here just to see what happens when no pbs are set. any outcome is random as it sorts 2 entries with time 0 so im not gonna assert anything
@@ -192,10 +191,6 @@ def test_multimatch():
     match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
     match2 = src.backend.Match(starttime, duration, surfmap_match2, zone_match2, teams_match2)
     match3 = src.backend.Match(starttime, duration, surfmap_match3, zone_match3, teams_match3)
-
-    assert match1.get_id() == "38142345_58229111_" + str(starttime.timestamp())
-    assert match2.get_id() == "37964988_246208267_" + str(starttime.timestamp())
-    assert match3.get_id() == "44534061_340810357_" + str(starttime.timestamp())
 
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
     player1.add_time(10, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)

@@ -4,6 +4,7 @@ import time
 import datetime
 import threading
 import dateutil
+import uuid
 
 ######################
 # Team related stuff #
@@ -48,7 +49,7 @@ class Match:
     surfmap             = None
     zone                = None
     leaderboard         = None
-    valid               = True
+    valid               = True #setting the value here instead of init makes it not appear when returning a match via the api
     match_over          = None
 
 
@@ -70,15 +71,11 @@ class Match:
             elif teamsize != playercount:
                 self.valid = False
 
-
-
-            for player in team.get_players():
-                idstring = idstring + str(player.get_id()) + "_"
-
+            idstring = str(uuid.uuid4())
             if not self.valid:
                 idstring = "INVALID_UNEQUAL_SIZE_TEAMS_" + idstring
 
-        self.id = idstring + str(self.starttime.timestamp())
+        self.id =idstring
         self.match_over = False
         global matches
         matches.append(self)
