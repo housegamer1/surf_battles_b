@@ -1,6 +1,7 @@
 curl -i -H "Content-Type: application/json" -X POST -d '{
     "map":"surf_outside",
     "zone":1,
+    "duration":1,
     "teams": [
         {
             "name": "Not edible objects",

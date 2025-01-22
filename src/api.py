@@ -89,6 +89,8 @@ def validate_add_request(data):
     has_teams = "teams" in data and isinstance(data["teams"], list) and len(data["teams"]) > 1
     teamcount = 0
     teams_with_players = 0
+
+    has_duration = "duration" in data
     
     if has_map and has_zone and has_teams:    
         for team in data["teams"]:
@@ -96,7 +98,7 @@ def validate_add_request(data):
             if "players" in team and len(team["players"]) > 0:
                 teams_with_players = teams_with_players + 1
             
-    return zone_exists and has_teams and teamcount != 0 and (teams_with_players == teamcount)
+    return zone_exists and has_teams and teamcount != 0 and (teams_with_players == teamcount) and has_duration
 
 def validate_remove_request(data):
     #so far only check id. not sure if we need to check more in the future
@@ -117,7 +119,7 @@ def prepare_new_match(data):
         teams.append(backend.Team(teamname, players))
 
     starttime = datetime.datetime.now(datetime.timezone.utc)
-    duration = 10 #duration is irrelevant for the backend at this point....
+    duration = data["duration"]
     match = backend.Match(starttime, duration, surfmap, zone, teams)
     return "created match: " + match.get_id()
 

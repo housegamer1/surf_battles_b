@@ -13,6 +13,7 @@ def test_validate_add_request():
     data = """{
     "map":"surf_helloworld",
     "zone":0,
+    "duration":1,
     "teams": [
         {
             "name": "Omnific oneshotters!",

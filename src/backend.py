@@ -49,6 +49,7 @@ class Match:
     zone                = None
     leaderboard         = None
     valid               = True
+    match_over          = None
 
 
     def __init__(self, starttime, duration, surfmap, zone, teams) -> None:
@@ -78,7 +79,7 @@ class Match:
                 idstring = "INVALID_UNEQUAL_SIZE_TEAMS_" + idstring
 
         self.id = idstring + str(self.starttime.timestamp())
-
+        self.match_over = False
         global matches
         matches.append(self)
 
@@ -105,6 +106,17 @@ class Match:
 
     def get_valid(self):
         return self.valid
+
+    def get_match_over(self):
+        return self.match_over
+
+    def is_still_running(self):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        duration_as_delta = datetime.timedelta(minutes=self.duration)
+        if now - self.starttime > duration_as_delta:
+            self.match_over = True
+            return False
+        return True
 
     def determine_leading_team(self):
         team_times = [] #trying to make it so that in theory more than 2 teams could compete in a match
@@ -230,13 +242,13 @@ class Record:
 
     def get_zone(self):
         return self.zone
-    
+
     def get_ispr(self):
         return self.ispr
-    
+
     def get_iswr(self):
         return self.iswr
-    
+
     def get_rank(self):
         return self.rank
 
@@ -392,29 +404,28 @@ def backend_loop():
 
 
         for match in matches:
-            for entry in content:
+            if match.is_still_running():
+                for entry in content:
 
+                    #if match.get_surfmap() != None:
+                    #    if entry["map"] != match.get_surfmap():
+                    #        continue
 
+                    #if match.get_zone() != None:
+                    #    if entry["track"] != match.get_zone():
+                    #        continue
 
-                #if match.get_surfmap() != None:
-                #    if entry["map"] != match.get_surfmap():
-                #        continue
+                    for team in match.get_teams():
+                        for player in team.get_players():
+                            player.determine_connected(online, match.get_surfmap())
+                            if content != None and (lastPollResult == None or lastPollResult != content):
+                                if entry["steamid"] == str(player.get_id()):
+                                    #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
+                                    player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime(), entry["ispr"], entry["iswr"], entry["rank"])
 
-                #if match.get_zone() != None:
-                #    if entry["track"] != match.get_zone():
-                #        continue
+                    match.determine_leading_team()
+                    match.determine_team_delta()
+                    match.determine_player_delta()
 
-                for team in match.get_teams():
-                    for player in team.get_players():
-                        player.determine_connected(online, match.get_surfmap())
-                        if content != None and (lastPollResult == None or lastPollResult != content):
-                            if entry["steamid"] == str(player.get_id()):
-                                #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
-                                player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime(), entry["ispr"], entry["iswr"], entry["rank"])
-
-                match.determine_leading_team()
-                match.determine_team_delta()
-                match.determine_player_delta()
-
-                lastPollResult = content
+        lastPollResult = content
         time.sleep(2)
