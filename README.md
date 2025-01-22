@@ -23,7 +23,7 @@ requires dateutil<br>
   - team with the lowest combined time on the match map&zone
   - supports tie
 
-* matches are accessed via their id (to be simplified)
+* matches are accessed via their id
 * keep track of the time difference of each team to the fastest team (in seconds)
 * keep track of the time difference of each player to the fastest player (in seconds)
 * keeps track of the players connection status (offline, online wrong map, online)
