@@ -131,7 +131,7 @@ def testing_settimes():
     for team in match.get_teams():
         time = time +1
         for player in team.get_players():
-            player.add_time(time, now, "surf_njv", 4)
+            player.add_time(time, now, "surf_njv", 4, now, 0, 0, 0)
 
     match.determine_leading_team()
     match.determine_team_delta()

@@ -206,12 +206,18 @@ class Record:
     timestamp   = None
     map         = None
     zone        = None
+    ispr        = None
+    iswr        = None
+    rank        = None
 
-    def __init__(self, time, timestamp, map , zone) -> None:
+    def __init__(self, time, timestamp, map , zone, ispr, iswr, rank) -> None:
         self.time = time
         self.timestamp = timestamp
         self.map = map
         self.zone = zone
+        self.ispr = ispr
+        self.iswr = iswr
+        self.rank = rank
 
     def get_time(self):
         return self.time
@@ -224,6 +230,15 @@ class Record:
 
     def get_zone(self):
         return self.zone
+    
+    def get_ispr(self):
+        return self.ispr
+    
+    def get_iswr(self):
+        return self.iswr
+    
+    def get_rank(self):
+        return self.rank
 
 
 class Player:
@@ -239,7 +254,7 @@ class Player:
         self.records = []
         self.connected = "Offline"
 
-    def add_time(self, settime, settimestamp, map, zone, starttime):
+    def add_time(self, settime, settimestamp, map, zone, starttime, ispr, iswr, rank):
 
         if isinstance(settimestamp, datetime.datetime):
             finishstamp = settimestamp
@@ -249,7 +264,7 @@ class Player:
         #prevent records from before program launch being recorded
         if finishstamp >= starttime:
 
-            finish = Record(settime, settimestamp, map, zone)
+            finish = Record(settime, settimestamp, map, zone, ispr, iswr, rank)
 
             for entry in self.records:
                 if entry.get_timestamp() == settimestamp:
@@ -395,7 +410,7 @@ def backend_loop():
                         if content != None and (lastPollResult == None or lastPollResult != content):
                             if entry["steamid"] == str(player.get_id()):
                                 #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
-                                player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime())
+                                player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime(), entry["ispr"], entry["iswr"], entry["rank"])
 
                 match.determine_leading_team()
                 match.determine_team_delta()

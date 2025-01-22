@@ -12,7 +12,7 @@ def test_record(): #wowee much useful
     time = 60
     map = "surf_blackheart"
     zone = 0
-    rec = src.backend.Record(time, now, map, zone)
+    rec = src.backend.Record(time, now, map, zone, 0, 0, 0)
 
     assert rec.get_time() == time
     assert rec.get_timestamp() == now
@@ -32,7 +32,7 @@ def test_add_time():
     assert player.get_records() == []
     assert player.get_personal_best(map, zone) == None
 
-    player.add_time(time, now, map, zone, now)
+    player.add_time(time, now, map, zone, now, 0, 0, 0)
     assert len(player.get_records()) == 1
     assert player.get_personal_best(map, zone) == time
     
@@ -92,8 +92,8 @@ def test_match():
     match.determine_leading_team() # calling the function here just to see what happens when no pbs are set. any outcome is random as it sorts 2 entries with time 0 so im not gonna assert anything
 
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
-    player1.add_time(50, newtime, surfmap, zone, starttime)
-    player3.add_time(60, newtime, surfmap, zone, starttime)
+    player1.add_time(50, newtime, surfmap, zone, starttime, 0, 0, 0)
+    player3.add_time(60, newtime, surfmap, zone, starttime, 0, 0, 0)
     match.determine_leading_team()
 
     team1_dict = {
@@ -119,7 +119,7 @@ def test_match():
     assert match.get_leaderboard()["entries"][1] == team2_dict
     assert match.get_leaderboard()["entries"][2] == team3_dict
 
-    player4.add_time(60, newtime, surfmap, zone, starttime)
+    player4.add_time(60, newtime, surfmap, zone, starttime, 0, 0, 0)
     match.determine_leading_team()
     team2_dict = {
                 "team": team2,
@@ -134,8 +134,8 @@ def test_match():
     assert match.get_leaderboard()["entries"][1] == team1_dict
     assert match.get_leaderboard()["entries"][2] == team3_dict
 
-    player5.add_time(50, newtime, surfmap, zone, starttime)
-    player6.add_time(50, newtime, surfmap, zone, starttime)
+    player5.add_time(50, newtime, surfmap, zone, starttime, 0, 0, 0)
+    player6.add_time(50, newtime, surfmap, zone, starttime, 0, 0, 0)
     match.determine_leading_team()
 
     team3_dict = {
@@ -198,15 +198,15 @@ def test_multimatch():
     assert match3.get_id() == "44534061_340810357_" + str(starttime.timestamp())
 
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
-    player1.add_time(10, newtime, surfmap_match1, zone_match1, starttime)
-    player2.add_time(10, newtime, surfmap_match1, zone_match1, starttime) #player2 set the exact same time!! who is ahead? 
+    player1.add_time(10, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
+    player2.add_time(10, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0) #player2 set the exact same time!! who is ahead? 
 
-    player3.add_time(11, newtime, surfmap_match2, zone_match2, starttime)
-    player3.add_time(9, newtime, surfmap_match1, zone_match1, starttime) #player3 was funny and completed another map (and its time faster than the match map he is signed up for)
-    player4.add_time(10, newtime, surfmap_match2, zone_match2, starttime)
+    player3.add_time(11, newtime, surfmap_match2, zone_match2, starttime, 0, 0, 0)
+    player3.add_time(9, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0) #player3 was funny and completed another map (and its time faster than the match map he is signed up for)
+    player4.add_time(10, newtime, surfmap_match2, zone_match2, starttime, 0, 0, 0)
 
-    player5.add_time(10, newtime, surfmap_match3, zone_match3, starttime)
-    player6.add_time(11, newtime, surfmap_match3, zone_match3, starttime)
+    player5.add_time(10, newtime, surfmap_match3, zone_match3, starttime, 0, 0, 0)
+    player6.add_time(11, newtime, surfmap_match3, zone_match3, starttime, 0, 0, 0)
 
     match1.determine_leading_team()
     match2.determine_leading_team()
@@ -241,9 +241,9 @@ def test_determine_team_delta():
     match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
 
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
-    player1.add_time(10, newtime, surfmap_match1, zone_match1, starttime)
-    player2.add_time(10.015, newtime, surfmap_match1, zone_match1, starttime) #1tick diff
-    player3.add_time(13.625, newtime, surfmap_match1, zone_match1, starttime)
+    player1.add_time(10, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
+    player2.add_time(10.015, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0) #1tick diff
+    player3.add_time(13.625, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
 
     team1_dict = {
                 "team": team1,
@@ -300,10 +300,10 @@ def test_determine_player_delta():
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
 
 
-    player1.add_time(None, newtime, surfmap_match1, zone_match1, starttime)
-    player2.add_time(10.015, newtime, surfmap_match1, zone_match1, starttime)
-    player3.add_time(8.75, newtime, surfmap_match1, zone_match1, starttime)
-    player4.add_time(8, newtime, surfmap_match1, zone_match1, starttime)
+    player1.add_time(None, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
+    player2.add_time(10.015, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
+    player3.add_time(8.75, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
+    player4.add_time(8, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
 
     match1.determine_leading_team() #required for determining player deltas
     match1.determine_player_delta()
