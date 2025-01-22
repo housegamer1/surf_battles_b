@@ -113,7 +113,7 @@ class Match:
     def is_still_running(self):
         now = datetime.datetime.now(datetime.timezone.utc)
         duration_as_delta = datetime.timedelta(minutes=self.duration)
-        if now - self.starttime > duration_as_delta:
+        if now - self.starttime >= duration_as_delta:
             self.match_over = True
             return False
         return True
