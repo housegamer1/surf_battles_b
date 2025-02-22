@@ -37,5 +37,5 @@ requires dateutil<br>
 * / - GET- does nothing
 * /matches -GET- returns a list of all matches and their respective info
 * /match/id -GET- returns info of a specific match
-* /addmatch -POST- creates a new match. expects content-type to be application/json and the body to contain map, zone, duration, teams (where teams is a list containing a name and a list of steamids for the players. steamid as seen in sh profile url)
+* /addmatch -POST- creates a new match. expects content-type to be application/json and the body to contain map, zone, duration, teams (where teams is a list containing a name and a list of steamids for the players (compare the curl.sh helper i used to test stuff). steamid as seen in sh profile url)
 * /removematch -DELETE- removes a match. expects content-type to be application/json and the body to contain the id
