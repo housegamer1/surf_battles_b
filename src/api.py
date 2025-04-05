@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 import src.backend as backend
 import datetime
 import json
@@ -20,7 +20,8 @@ def match(matchid):
         if match.get_id() == matchid:
             return backend.get_json(match)
 
-    return "Match ID not found"
+    data = {"message": "Match ID not found"}
+    return jsonify(data), 404
 
 @api_routes.route("/addmatch", methods=["POST"])
 def addmatch():
@@ -34,9 +35,11 @@ def addmatch():
         if validate_add_request(data):
             return prepare_new_match(data), 201
         else:
-            return "post request missing essential data", 400
+            data = {"message": "post request missing essential data"}
+            return jsonify(data), 400
     else:
-        return "Invalid content type. Please use application/json", 406
+        data = {"message": "Invalid content type. Please use application/json"}
+        return jsonify(data), 406
 
 
 @api_routes.route("/removematch", methods=["DELETE"])
@@ -60,13 +63,17 @@ def removematch():
             #i dont want to modify the list while i loop over it. surely it would be fine but lets just not.
             if found_match != None:
                 backend.matches.remove(found_match)
-                return "Deleted match: " + id, 200
+                data = {"message": "Deleted match", "id": id}
+                return jsonify(data), 200
             else:
-                return "Match not deleted. Could not find match id: " + id, 404
+                data = {"message": "Match not deleted. Could not find match id", "id": id}
+                return jsonify(data), 404
         else:
-            return "post request missing essential data", 400
+            data = {"message": "post request missing essential data"}
+            return jsonify(data), 400
     else:
-        return "Invalid content type. Please use application/json", 406
+        data = {"message": "Invalid content type. Please use application/json"}
+        return jsonify(data), 406
 
 
 
@@ -124,43 +131,44 @@ def prepare_new_match(data):
     starttime = datetime.datetime.now(datetime.timezone.utc)
     duration = data["duration"]
     match = backend.Match(starttime, duration, surfmap, zone, teams)
-    return "created match: " + match.get_id()
+    data = {"message": "created match", "id": match.get_id()}
+    return jsonify(data)
 
 
 #routes only for internal testing
-@api_routes.route("/testing_settimes")
-def testing_settimes():
-    now = datetime.datetime.now(datetime.timezone.utc)
-    match = backend.matches[0]
-    time = 10
-    for team in match.get_teams():
-        time = time +1
-        for player in team.get_players():
-            player.add_time(time, now, "surf_njv", 4, now, 0, 0, 0)
+# @api_routes.route("/testing_settimes")
+# def testing_settimes():
+#     now = datetime.datetime.now(datetime.timezone.utc)
+#     match = backend.matches[0]
+#     time = 10
+#     for team in match.get_teams():
+#         time = time +1
+#         for player in team.get_players():
+#             player.add_time(time, now, "surf_njv", 4, now, 0, 0, 0)
 
-    match.determine_leading_team()
-    match.determine_team_delta()
-    match.determine_player_delta()
-    return "Times set."
+#     match.determine_leading_team()
+#     match.determine_team_delta()
+#     match.determine_player_delta()
+#     return "Times set."
 
-@api_routes.route("/testing_newmatch")
-def testing_newmatch():
-    player1_id = 38142345
-    player2_id = 58229111
-    player1 = backend.Player(player1_id)
-    player2 = backend.Player(player2_id)
-    team1 = backend.Team("A", [player1])
-    team2 = backend.Team("B", [player2])
+# @api_routes.route("/testing_newmatch")
+# def testing_newmatch():
+#     player1_id = 38142345
+#     player2_id = 58229111
+#     player1 = backend.Player(player1_id)
+#     player2 = backend.Player(player2_id)
+#     team1 = backend.Team("A", [player1])
+#     team2 = backend.Team("B", [player2])
 
 
-    starttime = datetime.datetime.now(datetime.timezone.utc)
-    duration = 10 #minutes
+#     starttime = datetime.datetime.now(datetime.timezone.utc)
+#     duration = 10 #minutes
 
-    teams_match1 = [team1, team2]
+#     teams_match1 = [team1, team2]
 
-    surfmap_match1 = "surf_njv"
-    zone_match1 = 4
+#     surfmap_match1 = "surf_njv"
+#     zone_match1 = 4
 
-    backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
-    return "New match created!"
+#     backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+#     return "New match created!"
 
