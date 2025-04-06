@@ -33,7 +33,7 @@ class Team:
         return self.players
 
     def set_diff_to_fastest_team(self, diff):
-        self.diff_to_fastest_team = trunc_to_tick(diff)
+        self.diff_to_fastest_team = ghetto_trunc_decimals(diff)
 
     def get_diff_to_fastest_team(self):
         return self.diff_to_fastest_team
@@ -231,7 +231,7 @@ class Record:
     rank        = None
 
     def __init__(self, time, timestamp, map , zone, ispr, iswr, rank) -> None:
-        self.time = time
+        self.time = ghetto_trunc_decimals(time)
         self.timestamp = timestamp
         self.map = map
         self.zone = zone
@@ -322,7 +322,7 @@ class Player:
         return fastest_time
 
     def set_diff_to_fastest_player(self, diff):
-        self.diff_to_fastest_player = trunc_to_tick(diff)
+        self.diff_to_fastest_player = ghetto_trunc_decimals(diff)
 
     def get_diff_to_fastest_player(self):
         return self.diff_to_fastest_player
@@ -384,8 +384,12 @@ def get_json(obj):
 ###################
 # ghetto truncing #
 ###################
-def trunc_to_tick(number):
-    return float(str(number)[:5])
+def ghetto_trunc_decimals(number, decimalpoints=3):
+    strnumber = str(number).split(".")
+    if len(strnumber) > 1:
+        strnumber[1] = strnumber[1][:decimalpoints] #three decimal points
+
+    return float(".".join(strnumber))
 
 #######################
 # globals because idc #
