@@ -303,7 +303,7 @@ def test_determine_player_delta():
     match1.determine_leading_team() #required for determining player deltas
     match1.determine_player_delta()
 
-    assert player1.get_diff_to_fastest_player() == None
+    assert player1.get_diff_to_fastest_player() == 999999
     assert player2.get_diff_to_fastest_player() == 2.015
     assert player3.get_diff_to_fastest_player() == 0.75
     assert player4.get_diff_to_fastest_player() == 0

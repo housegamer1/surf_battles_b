@@ -182,8 +182,7 @@ class Match:
 
             for team in self.leaderboard["entries"]:
                 team_time = team["sum_time"]
-
-                #TODO: check only on correct map and zone?
+    
                 if leading_time == None:
                     leading_time = team_time
 
@@ -403,7 +402,6 @@ threadcontrol = threading.Event()
 def backend_loop():
     while not threadcontrol.is_set():
         global lastPollResult
-        #TODO with every refresh cycle, go through all players in the matches and see if they are connected and if that server is running the right map
         #using general api and filtering here to reduce api calls
         endpoint = shapi + "finishes"
         content = request(endpoint, 201)
