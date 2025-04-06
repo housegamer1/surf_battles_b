@@ -38,6 +38,10 @@ class Team:
     def get_diff_to_fastest_team(self):
         return self.diff_to_fastest_team
 
+    def sort_players_by_pb(self):
+        self.players = sorted(self.players, key=lambda item : (item.get_diff_to_fastest_player()))
+
+
 #######################
 # Match related stuff #
 #######################
@@ -110,7 +114,7 @@ class Match:
     def is_still_running(self):
         if self.match_over:
             return False
-        
+
         now = datetime.datetime.now(datetime.timezone.utc)
         duration_as_delta = datetime.timedelta(minutes=self.duration)
         if now - self.starttime >= duration_as_delta:
@@ -134,7 +138,7 @@ class Match:
                     team_sum = team_sum + pb
                     players_set_times = players_set_times + 1
 
-            teamdict = { #TODO expand leaderboard objects to contain the times set by the players
+            teamdict = {
                 "team": team,
                 "times_set": players_set_times,
                 "sum_time": team_sum
@@ -179,6 +183,7 @@ class Match:
             for team in self.leaderboard["entries"]:
                 team_time = team["sum_time"]
 
+                #TODO: check only on correct map and zone?
                 if leading_time == None:
                     leading_time = team_time
 
@@ -200,6 +205,7 @@ class Match:
 
             sorted_by_time = sorted(players, key=lambda item : (item["time"]))
 
+
             for player in sorted_by_time:
                 pb = player["time"]
 
@@ -208,6 +214,8 @@ class Match:
 
                 player["player"].set_diff_to_fastest_player(pb - leading_time)
 
+        for team in self.teams:
+            team.sort_players_by_pb()
 
 
 ########################
@@ -257,7 +265,7 @@ class Player:
     id      = None
     name    = None
     records = None
-    diff_to_fastest_player = None
+    diff_to_fastest_player = 999999
     connected = None
 
     def __init__(self, id) -> None:
