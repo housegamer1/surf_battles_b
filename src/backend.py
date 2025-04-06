@@ -214,6 +214,7 @@ class Match:
                 player["player"].set_diff_to_fastest_player(pb - leading_time)
 
         for team in self.teams:
+            #this needs the diff to fastest player to be set
             team.sort_players_by_pb()
 
 
@@ -264,7 +265,7 @@ class Player:
     id      = None
     name    = None
     records = None
-    diff_to_fastest_player = 999999
+    diff_to_fastest_player = 999999 #setting the value here instead of init makes it not appear when returning a match via the api
     connected = None
 
     def __init__(self, id) -> None:
@@ -290,6 +291,7 @@ class Player:
                     return #time set at this timestamp already exists, skip.
 
             self.records.append(finish)
+            self.records = sorted(self.records, key=lambda item : (item.get_time()))
 
     def clear_times(self):
         self.records.clear()
