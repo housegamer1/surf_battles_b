@@ -134,7 +134,7 @@ class Match:
             for player in team.get_players():
                 pb = player.get_personal_best(self.surfmap, self.zone)
 
-                if pb != None:
+                if pb != "No time on match map yet":
                     team_sum = team_sum + pb
                     players_set_times = players_set_times + 1
 
@@ -199,7 +199,7 @@ class Match:
 
                 for player in team_players:
                     pb = player.get_personal_best(self.surfmap, self.zone)
-                    if pb != None:
+                    if pb != "No time on match map yet":
                         players.append({"player":player, "time":pb})
 
             sorted_by_time = sorted(players, key=lambda item : (item["time"]))
@@ -267,12 +267,14 @@ class Player:
     records = None
     diff_to_fastest_player = 999999 #setting the value here instead of init makes it not appear when returning a match via the api
     connected = None
+    fastest_time = None
 
     def __init__(self, id) -> None:
         self.id = id
         self.name = request_name(self.id)
         self.records = []
         self.connected = "Offline"
+        self.fastest_time = "No time on match map yet"
 
     def add_time(self, settime, settimestamp, map, zone, starttime, ispr, iswr, rank):
 
@@ -309,14 +311,14 @@ class Player:
         return self.records
 
     def get_personal_best(self, surfmap, zone):
-        fastest_time = None
+        fastest_time = self.fastest_time
         for record in self.records:
             if record.get_map() == surfmap and record.get_zone() == zone:
                 time = record.get_time()
 
-                if fastest_time == None or time < fastest_time:
+                if fastest_time == "No time on match map yet" or time < fastest_time:
                     fastest_time = time
-
+        self.fastest_time = fastest_time
         return fastest_time
 
     def set_diff_to_fastest_player(self, diff):
