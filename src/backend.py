@@ -134,8 +134,11 @@ class Match:
         if matchstatus == MatchStatus.RUNNING:
             self.set_starttime(datetime.datetime.now(datetime.timezone.utc))
 
+        #TODO:
+        #handle pausing and restarting
 
     def is_still_running(self):
+        #TODO: delete function / replace with a new logic for pausable timer
         if self.match_over:
             return False
 
@@ -401,7 +404,7 @@ def request(url, acceptCode=200):
 ##################################
 def get_json(obj):
     return json.loads(
-        json.dumps(obj, default=lambda o: getattr(o, '__dict__', str(o)))
+        json.dumps(obj, default=lambda o: str(o.name) if isinstance(o, enum.Enum) else getattr(o, '__dict__', str(o)))
     )
 
 
@@ -439,7 +442,6 @@ def backend_loop():
         content = request(endpoint, 201)
         online = request(shapi + "online")
 
-        loopruntime = time.time()
         for match in matches:
             for team in match.get_teams():
                 for player in team.get_players():
@@ -464,9 +466,6 @@ def backend_loop():
                         match.determine_leading_team()
                         match.determine_team_delta()
                         match.determine_player_delta()
-
-        loopduration = time.time() - loopruntime
-        print(f"Loop duration {loopduration}")
 
         lastPollResult = content
         time.sleep(2)
