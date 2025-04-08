@@ -39,3 +39,4 @@ requires dateutil<br>
 * /match/id -GET- returns info of a specific match
 * /addmatch -POST- creates a new match. expects content-type to be application/json and the body to contain map, zone, duration, teams (where teams is a list containing a name and a list of steamids for the players (compare the curl.sh helper i used to test stuff). steamid as seen in sh profile url)
 * /removematch -DELETE- removes a match. expects content-type to be application/json and the body to contain the id
+* /controlmatch -POST- controls the match status, can be set to NOT_STARTED, RUNNING, PAUSED, OVER. expects content-type to be application/json and the body to contain the id
