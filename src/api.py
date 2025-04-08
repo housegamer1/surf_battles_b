@@ -41,6 +41,47 @@ def addmatch():
         data = {"message": "Invalid content type. Please use application/json"}
         return jsonify(data), 406
 
+@api_routes.route("/controlmatch", methods=["POST"])
+def controlmatch():
+    if request.content_type == "application/json":
+        rq_json = request.json
+        if isinstance(rq_json, dict):
+            data = rq_json
+        else:
+            data = json.loads(rq_json)
+
+        if "id" in data and "set_status" in data:
+            id = data["id"]
+            newstatus = data["set_status"]
+
+            found_match = backend.get_match(id)
+            if found_match != None:
+                data = {"message": "New match status is " + newstatus, "id": id}
+                if newstatus == "NOT_STARTED":
+                    found_match.set_match_status(backend.MatchStatus.NOT_STARTED)
+                    return jsonify(data), 200
+                elif newstatus == "RUNNING":
+                    found_match.set_match_status(backend.MatchStatus.RUNNING)
+                    return jsonify(data), 200
+                elif newstatus == "PAUSED":
+                    found_match.set_match_status(backend.MatchStatus.PAUSED)
+                    return jsonify(data), 200
+                elif newstatus == "OVER":
+                    found_match.set_match_status(backend.MatchStatus.OVER)
+                    return jsonify(data), 200
+                else:
+                    data = {"message": "Invalid match status " + newstatus + " to set. Can only set NOT_STARTED, RUNNING, PAUSED, OVER", "id": id}
+                    return jsonify(data), 400
+            else:
+                data = {"message": "Match id not found", "id" : id}
+                return jsonify(data), 404
+        else:
+            data = {"message": "Request missing essential data, please provide id and set_status"}
+            return jsonify(data), 400
+    else:
+        data = {"message": "Invalid content type. Please use application/json"}
+        return jsonify(data), 406
+
 
 @api_routes.route("/removematch", methods=["DELETE"])
 def removematch():
@@ -53,12 +94,7 @@ def removematch():
 
         if validate_remove_request(data):
             id = data["id"]
-            found_match = None
-
-            for match in backend.matches:
-                if match.get_id() == id:
-                    found_match = match
-                    break
+            found_match = backend.get_match(id)
 
             #i dont want to modify the list while i loop over it. surely it would be fine but lets just not.
             if found_match != None:
@@ -99,15 +135,15 @@ def validate_add_request(data):
     teams_with_name = 0
 
     has_duration = "duration" in data
-    
-    if has_map and has_zone and has_teams:    
+
+    if has_map and has_zone and has_teams:
         for team in data["teams"]:
             teamcount = teamcount + 1
             if "players" in team and len(team["players"]) > 0:
                 teams_with_players = teams_with_players + 1
             if "name" in team and team["name"] != "":
                 teams_with_name = teams_with_name + 1
-            
+
     return zone_exists and has_teams and teamcount != 0 and (teams_with_players == teamcount) and (teams_with_name == teamcount) and has_duration
 
 def validate_remove_request(data):

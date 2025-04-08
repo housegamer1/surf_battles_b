@@ -5,6 +5,7 @@ import datetime
 import threading
 import dateutil
 import uuid
+import enum
 
 ######################
 # Team related stuff #
@@ -45,6 +46,20 @@ class Team:
 #######################
 # Match related stuff #
 #######################
+def get_match(id):
+    global matches #not sure if i need this for just reading...
+    for match in matches:
+        if match.get_id() == id:
+            return match
+
+    return None
+
+class MatchStatus(enum.Enum):
+    NOT_STARTED = 0
+    RUNNING     = 1
+    PAUSED      = 2
+    OVER        = 3
+
 class Match:
     id                  = None
     starttime           = None
@@ -54,7 +69,7 @@ class Match:
     zone                = None
     leaderboard         = None
     valid               = True #setting the value here instead of init makes it not appear when returning a match via the api
-    match_over          = None
+    match_status        = None
 
 
     def __init__(self, starttime, duration, surfmap, zone, teams) -> None:
@@ -79,8 +94,8 @@ class Match:
             if not self.valid:
                 idstring = "INVALID_UNEQUAL_SIZE_TEAMS_" + idstring
 
-        self.id =idstring
-        self.match_over = False
+        self.id = idstring
+        self.match_status = MatchStatus.RUNNING
         global matches
         matches.append(self)
 
@@ -108,8 +123,11 @@ class Match:
     def get_valid(self):
         return self.valid
 
-    def get_match_over(self):
-        return self.match_over
+    def get_match_status(self):
+        return self.match_status
+
+    def set_match_status(self, matchstatus: MatchStatus):
+        self.match_status = matchstatus
 
     def is_still_running(self):
         if self.match_over:
@@ -182,7 +200,7 @@ class Match:
 
             for team in self.leaderboard["entries"]:
                 team_time = team["sum_time"]
-    
+
                 if leading_time == None:
                     leading_time = team_time
 
@@ -277,23 +295,23 @@ class Player:
         self.fastest_time = "No time on match map yet"
 
     def add_time(self, settime, settimestamp, map, zone, starttime, ispr, iswr, rank):
+        if settime != None:
+            if isinstance(settimestamp, datetime.datetime):
+                finishstamp = settimestamp
+            else:
+                finishstamp = dateutil.parser.parse(settimestamp)
 
-        if isinstance(settimestamp, datetime.datetime):
-            finishstamp = settimestamp
-        else:
-            finishstamp = dateutil.parser.parse(settimestamp)
+            #prevent records from before program launch being recorded
+            if finishstamp >= starttime:
 
-        #prevent records from before program launch being recorded
-        if finishstamp >= starttime:
+                finish = Record(settime, settimestamp, map, zone, ispr, iswr, rank)
 
-            finish = Record(settime, settimestamp, map, zone, ispr, iswr, rank)
+                for entry in self.records:
+                    if entry.get_timestamp() == settimestamp:
+                        return #time set at this timestamp already exists, skip.
 
-            for entry in self.records:
-                if entry.get_timestamp() == settimestamp:
-                    return #time set at this timestamp already exists, skip.
-
-            self.records.append(finish)
-            self.records = sorted(self.records, key=lambda item : (item.get_time()))
+                self.records.append(finish)
+                self.records = sorted(self.records, key=lambda item : (item.get_time()))
 
     def clear_times(self):
         self.records.clear()
@@ -414,32 +432,35 @@ def backend_loop():
         endpoint = shapi + "finishes"
         content = request(endpoint, 201)
         online = request(shapi + "online")
-        #print(".", end="", flush=True)
 
-
+        loopruntime = time.time()
         for match in matches:
-            if match.is_still_running():
-                for entry in content:
+            for team in match.get_teams():
+                for player in team.get_players():
+                    player.determine_connected(online, match.get_surfmap()) #update player connection status even if the match is not running
 
-                    #if match.get_surfmap() != None:
-                    #    if entry["map"] != match.get_surfmap():
-                    #        continue
+                    if match.get_match_status() == MatchStatus.RUNNING and content != None and (lastPollResult == None or lastPollResult != content):
+                        #match is running and /finishes api shows a result we have not checked yet
+                        for entry in content:
 
-                    #if match.get_zone() != None:
-                    #    if entry["track"] != match.get_zone():
-                    #        continue
+                            if match.get_surfmap() != None:
+                               if entry["map"] != match.get_surfmap():
+                                   continue
 
-                    for team in match.get_teams():
-                        for player in team.get_players():
-                            player.determine_connected(online, match.get_surfmap())
-                            if content != None and (lastPollResult == None or lastPollResult != content):
-                                if entry["steamid"] == str(player.get_id()):
-                                    #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
-                                    player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime(), entry["ispr"], entry["iswr"], entry["rank"])
+                            if match.get_zone() != None:
+                               if entry["track"] != match.get_zone():
+                                   continue
 
-                    match.determine_leading_team()
-                    match.determine_team_delta()
-                    match.determine_player_delta()
+                            if entry["steamid"] == str(player.get_id()):
+                                #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
+                                player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime(), entry["ispr"], entry["iswr"], entry["rank"])
+
+                        match.determine_leading_team()
+                        match.determine_team_delta()
+                        match.determine_player_delta()
+
+        loopduration = time.time() - loopruntime
+        print(f"Loop duration {loopduration}")
 
         lastPollResult = content
         time.sleep(2)
