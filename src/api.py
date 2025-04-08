@@ -62,7 +62,6 @@ def controlmatch():
                     return jsonify(data), 200
                 elif newstatus == "RUNNING":
                     found_match.set_match_status(backend.MatchStatus.RUNNING)
-                    found_match.set_starttime(datetime.datetime.now(datetime.timezone.utc))
                     return jsonify(data), 200
                 elif newstatus == "PAUSED":
                     found_match.set_match_status(backend.MatchStatus.PAUSED)

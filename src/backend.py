@@ -94,7 +94,7 @@ class Match:
                 idstring = "INVALID_UNEQUAL_SIZE_TEAMS_" + idstring
 
         self.id = idstring
-        self.match_status = MatchStatus.RUNNING
+        self.match_status = MatchStatus.NOT_STARTED
         global matches
         matches.append(self)
 
@@ -130,6 +130,10 @@ class Match:
 
     def set_match_status(self, matchstatus: MatchStatus):
         self.match_status = matchstatus
+
+        if matchstatus == MatchStatus.RUNNING:
+            self.set_starttime(datetime.datetime.now(datetime.timezone.utc))
+
 
     def is_still_running(self):
         if self.match_over:

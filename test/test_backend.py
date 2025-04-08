@@ -84,7 +84,7 @@ def test_match():
     surfmap = "surf_njv"
     zone = 4
 
-    match = src.backend.Match(starttime, duration, surfmap, zone, teams)
+    match = src.backend.Match(duration, surfmap, zone, teams)
 
     assert match.get_leaderboard() == None
 
@@ -188,9 +188,9 @@ def test_multimatch():
     surfmap_match3 = "surf_corruption"
     zone_match3 = 0
 
-    match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
-    match2 = src.backend.Match(starttime, duration, surfmap_match2, zone_match2, teams_match2)
-    match3 = src.backend.Match(starttime, duration, surfmap_match3, zone_match3, teams_match3)
+    match1 = src.backend.Match(duration, surfmap_match1, zone_match1, teams_match1)
+    match2 = src.backend.Match(duration, surfmap_match2, zone_match2, teams_match2)
+    match3 = src.backend.Match(duration, surfmap_match3, zone_match3, teams_match3)
 
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
     player1.add_time(10, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
@@ -233,7 +233,7 @@ def test_determine_team_delta():
     surfmap_match1 = "surf_njv"
     zone_match1 = 4
 
-    match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+    match1 = src.backend.Match(duration, surfmap_match1, zone_match1, teams_match1)
 
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
     player1.add_time(10, newtime, surfmap_match1, zone_match1, starttime, 0, 0, 0)
@@ -291,7 +291,7 @@ def test_determine_player_delta():
     surfmap_match1 = "surf_njv"
     zone_match1 = 4
 
-    match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+    match1 = src.backend.Match(duration, surfmap_match1, zone_match1, teams_match1)
     newtime = datetime.datetime.now(datetime.timezone.utc) #program wont add times unless they are more recent than the match start
 
 
@@ -350,15 +350,16 @@ def test_poll_loop(mocker):
     team1 = src.backend.Team("A", [player1])
     team2 = src.backend.Team("B", [player2])
 
-    starttime = datetime.datetime.now(datetime.timezone.utc)
     duration = 10 #minutes
 
     teams_match1 = [team1, team2]
     surfmap_match1 = "surf_not_a_real_map"
     zone_match1 = 0
 
-    match1 = src.backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+    match1 = src.backend.Match(duration, surfmap_match1, zone_match1, teams_match1)
     assert match1.get_leaderboard() == None
+    assert match1.get_match_status() == src.backend.MatchStatus.NOT_STARTED
+    match1.set_match_status(src.backend.MatchStatus.RUNNING)
 
     #start main backend loop in a thread
     loop = threading.Thread(target=src.backend.backend_loop)
