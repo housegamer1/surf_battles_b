@@ -70,10 +70,13 @@ class Match:
     leaderboard         = None
     valid               = True #setting the value here instead of init makes it not appear when returning a match via the api
     match_status        = None
+    timeleft            = None #counting the timeleft in 2 sec steps for the frontend to use in the timer
+    remaining_at_unpause= None #time left since the map was started or unpaused.
+    running_duration    = None
 
 
     def __init__(self, duration, surfmap, zone, teams) -> None:
-        self.duration = duration #in minutes i guess. not sure if we even need this in the backend, since frontend likely tracks time
+        self.duration = datetime.timedelta(minutes=duration) #in minutes
         self.surfmap = surfmap
         self.zone = zone
         self.teams = teams
@@ -95,6 +98,8 @@ class Match:
 
         self.id = idstring
         self.match_status = MatchStatus.NOT_STARTED
+        self.running_duration = datetime.timedelta(seconds=0)
+
         global matches
         matches.append(self)
 
@@ -134,20 +139,30 @@ class Match:
         if matchstatus == MatchStatus.RUNNING:
             self.set_starttime(datetime.datetime.now(datetime.timezone.utc))
 
-        #TODO:
-        #handle pausing and restarting
+            if self.timeleft == None: #indicates that this is the first time that the match is set to running
+                self.timeleft = self.duration
+                self.remaining_at_unpause = self.timeleft
+            else: #indicates that the match was resumed from a paused state
+                self.remaining_at_unpause = self.duration - self.running_duration
 
-    def is_still_running(self):
-        #TODO: delete function / replace with a new logic for pausable timer
-        if self.match_over:
-            return False
+        elif matchstatus == MatchStatus.PAUSED:
+            pass #not sure i need to handle anything extra here
 
-        now = datetime.datetime.now(datetime.timezone.utc)
-        duration_as_delta = datetime.timedelta(minutes=self.duration)
-        if now - self.starttime >= duration_as_delta:
-            self.match_over = True
-            return False
-        return True
+        elif matchstatus == MatchStatus.OVER:
+            self.timeleft = datetime.timedelta(minutes=0)
+
+        elif matchstatus == MatchStatus.NOT_STARTED:
+            self.timeleft = None #likely a restart of the match. otherwise there is no reason to reset the match into pregame state with this
+
+
+    def update_timeleft(self):
+        newtimeleft = self.starttime + self.remaining_at_unpause - datetime.datetime.now(datetime.timezone.utc)
+        self.running_duration = self.duration - newtimeleft
+
+        if newtimeleft <= datetime.timedelta(seconds=0):
+            self.set_match_status(MatchStatus.OVER)
+        else:
+            self.timeleft = self.duration - self.running_duration
 
     def determine_leading_team(self):
         team_times = [] #trying to make it so that in theory more than 2 teams could compete in a match
@@ -434,9 +449,11 @@ threadcontrol = threading.Event()
 #############
 # main loop #
 #############
+sleeptime = 2
 def backend_loop():
     while not threadcontrol.is_set():
         global lastPollResult
+        global sleeptime #not sure if global needed for just reading
         #using general api and filtering here to reduce api calls
         endpoint = shapi + "finishes"
         content = request(endpoint, 201)
@@ -447,25 +464,31 @@ def backend_loop():
                 for player in team.get_players():
                     player.determine_connected(online, match.get_surfmap()) #update player connection status even if the match is not running
 
-                    if match.get_match_status() == MatchStatus.RUNNING and content != None and (lastPollResult == None or lastPollResult != content):
+                    if match.get_match_status() == MatchStatus.RUNNING:
+
+                        if content != None and (lastPollResult == None or lastPollResult != content):
                         #match is running and /finishes api shows a result we have not checked yet
-                        for entry in content:
+                            for entry in content:
 
-                            if match.get_surfmap() != None:
-                               if entry["map"] != match.get_surfmap():
-                                   continue
+                                if match.get_surfmap() != None:
+                                    if entry["map"] != match.get_surfmap():
+                                        continue
 
-                            if match.get_zone() != None:
-                               if entry["track"] != match.get_zone():
-                                   continue
+                                if match.get_zone() != None:
+                                    if entry["track"] != match.get_zone():
+                                        continue
 
-                            if entry["steamid"] == str(player.get_id()):
-                                #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
-                                player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime(), entry["ispr"], entry["iswr"], entry["rank"])
+                                if entry["steamid"] == str(player.get_id()):
+                                    #print("adding time " + str(entry["time"]) + " for player " + player.get_name() + "with steamid " + entry["steamid"] + "for player id " + str(player.get_id()) + " on map " + entry["map"] + " and track " + str(entry["track"]))
+                                    player.add_time(entry["time"], entry["date"], entry["map"], entry["track"], match.get_starttime(), entry["ispr"], entry["iswr"], entry["rank"])
 
-                        match.determine_leading_team()
-                        match.determine_team_delta()
-                        match.determine_player_delta()
+                            match.determine_leading_team()
+                            match.determine_team_delta()
+                            match.determine_player_delta()
+
+            if match.get_match_status() == MatchStatus.RUNNING: # update timeleft outside further loops to prevent taking off too much time. Do it at the end too, to allow times set in the last 2 sec to be valid
+                match.update_timeleft()
+
 
         lastPollResult = content
-        time.sleep(2)
+        time.sleep(sleeptime)
