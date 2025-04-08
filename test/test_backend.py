@@ -30,7 +30,7 @@ def test_add_time():
 
     assert player.get_id() == id
     assert player.get_records() == []
-    assert player.get_personal_best(map, zone) == None
+    assert player.get_personal_best(map, zone) == "No time on match map yet"
 
     player.add_time(time, now, map, zone, now, 0, 0, 0)
     assert len(player.get_records()) == 1
