@@ -72,8 +72,7 @@ class Match:
     match_status        = None
 
 
-    def __init__(self, starttime, duration, surfmap, zone, teams) -> None:
-        self.starttime = starttime
+    def __init__(self, duration, surfmap, zone, teams) -> None:
         self.duration = duration #in minutes i guess. not sure if we even need this in the backend, since frontend likely tracks time
         self.surfmap = surfmap
         self.zone = zone
@@ -104,6 +103,9 @@ class Match:
 
     def get_starttime(self):
         return self.starttime
+
+    def set_starttime(self, starttime):
+        self.starttime = starttime
 
     def get_duration(self):
         return self.duration

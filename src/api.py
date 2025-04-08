@@ -62,6 +62,7 @@ def controlmatch():
                     return jsonify(data), 200
                 elif newstatus == "RUNNING":
                     found_match.set_match_status(backend.MatchStatus.RUNNING)
+                    found_match.set_starttime(datetime.datetime.now(datetime.timezone.utc))
                     return jsonify(data), 200
                 elif newstatus == "PAUSED":
                     found_match.set_match_status(backend.MatchStatus.PAUSED)
@@ -164,9 +165,8 @@ def prepare_new_match(data):
 
         teams.append(backend.Team(teamname, players))
 
-    starttime = datetime.datetime.now(datetime.timezone.utc)
     duration = data["duration"]
-    match = backend.Match(starttime, duration, surfmap, zone, teams)
+    match = backend.Match(duration, surfmap, zone, teams)
     data = {"message": "created match", "id": match.get_id()}
     return jsonify(data)
 
@@ -205,6 +205,6 @@ def prepare_new_match(data):
 #     surfmap_match1 = "surf_njv"
 #     zone_match1 = 4
 
-#     backend.Match(starttime, duration, surfmap_match1, zone_match1, teams_match1)
+#     backend.Match(duration, surfmap_match1, zone_match1, teams_match1)
 #     return "New match created!"
 
