@@ -31,7 +31,7 @@ requires dateutil<br>
 * forwards the players name from sh api as well
 * finishes are only valid if they happened after /addmatch was used to create the match
 * bet i forgot something but yeah this is the basics
-* match_over will be set to True once the specified duration is up and times will no longer be added to this match
+* match_status will be set to OVER once the specified duration is up and times will no longer be added to this match
 
 ## Endpoints
 * / - GET- does nothing
