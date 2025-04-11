@@ -32,6 +32,10 @@ requires dateutil<br>
 * finishes are only valid if they happened after /addmatch was used to create the match
 * bet i forgot something but yeah this is the basics
 * match_status will be set to OVER once the specified duration is up and times will no longer be added to this match
+* in the leaderboard, players are sorted by their difference to the leader
+* in the leaderboard, players records are sorted by lowest time ( does not check if on the correct zone )
+  - to get the players fastest time on the match relevant map and zone, use the players field "fastest_time"
+* timeleft field will count down the amount of remaining time in 2 second steps (respects pausing of a match as well)
 
 ## Endpoints
 * / - GET- does nothing
